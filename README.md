@@ -4,7 +4,11 @@
 
 Have you **deleted** a file by mistake ? Modified a document and wish to **revert** the **changes** ? Has one of your **drive failed** ? *BitShelter* has got you covered in all these cases !
 
-**ATTENTION**: *BitShelter* is a **Work In Progress**, you may encounter bugs and not all features are available yet.
+> [!WARNING]
+> ***BitShelter is incompatible with Windows 11***.
+
+> [!NOTE]
+> Latest version has proven stable on Windows 10 and 7 but develop has been discontinued.
 
 ### Table of Content
 - [Screenshots](#screenshots)
