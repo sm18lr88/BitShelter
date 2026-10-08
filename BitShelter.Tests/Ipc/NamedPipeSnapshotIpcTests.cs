@@ -152,7 +152,8 @@ namespace BitShelter.Tests.Ipc
       using var server = new SnapshotPipeServer(new TestSnapshotService(), pipeName);
       server.Start();
 
-      var clients = Enumerable.Range(0, 20).Select(_ => new SnapshotClient(pipeName: pipeName)).ToArray();
+      // A long connect timeout: the test checks that every concurrent request succeeds, not how fast the machine is.
+      var clients = Enumerable.Range(0, 20).Select(_ => new SnapshotClient(pipeName: pipeName, connectTimeout: TimeSpan.FromSeconds(60))).ToArray();
 
       Assert.True(clients[0].Ping());
 

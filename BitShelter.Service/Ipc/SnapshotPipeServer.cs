@@ -12,10 +12,14 @@ namespace BitShelter.Service.Ipc
 {
   internal sealed class SnapshotPipeServer : IDisposable
   {
+    // Several listening instances, so that concurrent clients (for example the Agent UI and its
+    // backup notifier) do not wait for one accept loop to create the next pipe instance.
+    internal const int ListenerCount = 4;
+
     private readonly CancellationTokenSource cts = new CancellationTokenSource();
     private readonly ISnapshotService snapshotService;
     private readonly string pipeName;
-    private Task acceptLoop;
+    private Task[] acceptLoops;
 
     public SnapshotPipeServer(ISnapshotService snapshotService, string pipeName = null)
     {
@@ -25,16 +29,18 @@ namespace BitShelter.Service.Ipc
 
     public void Start()
     {
-      if (acceptLoop != null)
+      if (acceptLoops != null)
         return;
 
-      acceptLoop = Task.Run(() => AcceptLoopAsync(cts.Token));
+      acceptLoops = new Task[ListenerCount];
+      for (int i = 0; i < ListenerCount; i++)
+        acceptLoops[i] = Task.Run(() => AcceptLoopAsync(cts.Token));
     }
 
     public void Dispose()
     {
       cts.Cancel();
-      try { acceptLoop?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+      try { if (acceptLoops != null) Task.WaitAll(acceptLoops, TimeSpan.FromSeconds(2)); } catch { }
       cts.Dispose();
     }
 
