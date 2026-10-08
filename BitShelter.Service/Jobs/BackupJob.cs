@@ -1,4 +1,3 @@
-using Alphaleonis.Win32.Vss;
 using BitShelter.Backup;
 using BitShelter.Models;
 using BitShelter.Service.Backup;
@@ -68,7 +67,7 @@ namespace BitShelter.Service.Jobs
 
         using (var vss = new VssClient(new VssHost()))
         {
-          vss.Initialize(VssSnapshotContext.All, VssBackupType.Incremental);
+          vss.Initialize(VssSnapshotContextInternal.All);
           snapshots = snapshotIds.Select(vss.GetSnapshotProperties).ToList();
         }
 

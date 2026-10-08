@@ -19,7 +19,7 @@ BitShelter runs on **Windows 11 (x64)** with **.NET 10**. The build policy mirro
 - The service restricts `%ProgramData%\BitShelter` to SYSTEM and Administrators at startup (`AppDataSecurity`). Do not widen it: the LocalSystem service runs whatever rule files it finds there.
 - Backup encryption is standard OpenPGP only (`OpenPgpEncryption`), so users can restore with GnuPG. Do not add custom encryption formats. Passphrases are stored only DPAPI-protected (`PassphraseProtector`).
 - The backup engine lives in `BitShelter.Common\Backup` and has no VSS dependency. VSS path mapping and scheduling stay in `BitShelter.Service`.
-- VSS integration uses **AlphaVSS 2.x** (see `BitShelter.Common\VSS`). Processes must be x64.
+- VSS integration is BitShelter's own COM interop on .NET source-generated COM (`BitShelter.Common\VSS\Interop`), declared from the Windows SDK headers `vsbackup.h` and `vss.h`. Keep vtable order exact. Do not add a third-party VSS wrapper. Processes must be x64 (VSS does not support WOW64).
 - Scheduling uses **Quartz 4** with an in-memory store. The service rebuilds the triggers from the saved rules.
 - **Open source only.** Every dependency and build tool must be under an OSI-approved license. Do not use Syncfusion or other proprietary UI kits. Stock WinForms controls replaced the old Syncfusion controls. Do not use packages that require you to accept the OSMF EULA. For this reason, WiX stays on 5.x, and the benchmark exports CSV instead of using NPOI. Coverage uses coverlet, not Microsoft's code coverage extension.
 - The service is the background component and needs no UI. The Agent is optional. It starts elevated at logon through the `BitShelter` scheduled task when the user enables "Run at startup".

@@ -1,4 +1,3 @@
-using Alphaleonis.Win32.Vss;
 using BitShelter.Backup;
 using BitShelter.Models;
 using BitShelter.Models.Enums;
@@ -49,13 +48,13 @@ namespace BitShelter.Service.Jobs
         if (rule.Enabled == false) // Shouldn't happen expect in rare cases
           return ValueTask.CompletedTask;
 
-        vss = new VssClient(new VssHost());
-        vss.Initialize((VssSnapshotContext)rule.VssContext, (VssBackupType)rule.VssBackupType);
-
         if (rule.PruningStrategy == PruningStrategy.Global)
-          MakeRoom(vss, rule);
+          MakeRoom(rule);
 
-        List<Guid> snapshotIds = vss.CreateSnapshot(rule.Volumes, null, rule.VssExcludeWriters, rule.VssIncludeWriters).ToList();
+        vss = new VssClient(new VssHost());
+        vss.Initialize(rule.SnapshotContext);
+
+        List<Guid> snapshotIds = vss.CreateSnapshot(rule.Volumes).ToList();
 
         PruningMgr.Instance.CreateNewInstances(rule.Id, snapshotIds);
 
@@ -126,13 +125,17 @@ namespace BitShelter.Service.Jobs
         throw new JobExecutionException(ex);
     }
 
-    // The registry limit (MaxShadowCopies) applies to client-accessible snapshots. Other snapshot types have a fixed limit of 512 per volume.
-    private static void MakeRoom(VssClient vss, SnapshotRule rule)
+    // The registry limit (MaxShadowCopies) applies to client-accessible snapshots, which both supported contexts create.
+    // Uses its own VSS session: in writer mode, a query on the session that then creates the snapshot makes
+    // AddToSnapshotSet fail with VSS_E_UNEXPECTED (SetContextInternal in a bad state).
+    private static void MakeRoom(SnapshotRule rule)
     {
-      int limit = rule.VssContext == VssSnapshotContextInternal.ClientAccessible ? VssUtils.GetSnapshotLimit() : 512;
+      int limit = VssUtils.GetSnapshotLimit();
 
       try
       {
+        using var vss = new VssClient(new VssHost());
+        vss.Initialize(VssSnapshotContextInternal.All);
         PruningMgr.Instance.MakeRoomForRule(vss, rule, limit);
       }
       catch (Exception ex) when (ex is not OperationCanceledException)

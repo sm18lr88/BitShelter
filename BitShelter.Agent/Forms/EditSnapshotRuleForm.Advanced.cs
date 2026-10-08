@@ -1,5 +1,4 @@
-﻿using Alphaleonis.Win32.Vss;
-using BitShelter.Agent.Controls;
+﻿using BitShelter.Agent.Controls;
 using BitShelter.Models;
 using BitShelter.Models.Enums;
 using System;
@@ -14,8 +13,6 @@ namespace BitShelter.Agent.Forms
   {
     public void InitBaseAdvanced()
     {
-      cbSnapContext.FillWithEnum(VssSnapshotContextInternal.ClientAccessible);
-      cbSnapType.FillWithEnum(VssBackupTypeInternal.Incremental);
       cbPruningStrategy.FormattingEnabled = true;
       // Attach Format before filling: adding a Format handler refreshes the items and resets the selection.
       cbPruningStrategy.Format += (_, e) => e.Value = (PruningStrategy)e.ListItem == PruningStrategy.Global
@@ -26,10 +23,7 @@ namespace BitShelter.Agent.Forms
 
     public void InitEditAdvanced(SnapshotRule rule)
     {
-      cbSnapContext.SelectedIndex = cbSnapContext.Items.IndexOf(rule.VssContext);
-      cbSnapType.SelectedIndex = cbSnapType.Items.IndexOf(rule.VssBackupType);
-      tbSnapInclWriters.Text = String.Join(",", rule.VssIncludeWriters);
-      tbSnapExclWriters.Text = String.Join(",", rule.VssExcludeWriters);
+      cbUseVssWriters.Checked = rule.UsesVssWriters;
       nbSnapFailRetryCount.Value = rule.MaxRetryCount;
       cbSnapFailRestartVSS.Checked = rule.RetryRestartVSSService;
       cbPruningStrategy.SelectedIndex = cbPruningStrategy.Items.IndexOf(rule.PruningStrategy);
@@ -42,10 +36,7 @@ namespace BitShelter.Agent.Forms
 
     private void FillAdvanced(SnapshotRule rule)
     {
-      rule.VssContext = (VssSnapshotContextInternal)cbSnapContext.SelectedValue;
-      rule.VssBackupType = (VssBackupTypeInternal)cbSnapType.SelectedValue;
-      rule.VssIncludeWriters = new List<string>(tbSnapInclWriters.Text.Split(','));
-      rule.VssExcludeWriters = new List<string>(tbSnapExclWriters.Text.Split(','));
+      rule.VssContext = cbUseVssWriters.Checked ? VssSnapshotContextInternal.ClientAccessibleWriters : VssSnapshotContextInternal.ClientAccessible;
       rule.MaxRetryCount = (int)nbSnapFailRetryCount.Value;
       rule.RetryRestartVSSService = cbSnapFailRestartVSS.Checked;
       rule.PruningStrategy = (PruningStrategy)cbPruningStrategy.SelectedItem;

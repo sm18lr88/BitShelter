@@ -36,7 +36,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Alphaleonis.Win32.Vss;
 using BitShelter.Models;
 using BitShelter.Models.Enums;
 using BitShelter.Utils;
@@ -102,7 +101,7 @@ namespace BitShelter.Agent.Forms
     {
       using (VssClient vss = new VssClient(new VssHost()))
       {
-        vss.Initialize(VssSnapshotContext.ClientAccessible, VssBackupType.Incremental);
+        vss.Initialize(VssSnapshotContextInternal.ClientAccessible);
 
         cblDriveLetters.Items.AddRange(
           Volumes.ListVolumes()

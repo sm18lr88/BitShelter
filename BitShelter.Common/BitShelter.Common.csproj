@@ -2,10 +2,11 @@
   <PropertyGroup>
     <AssemblyName>BitShelter.Common</AssemblyName>
     <RootNamespace>BitShelter</RootNamespace>
+    <!-- The COM interface source generator (VSS interop) emits unsafe code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AlphaVSS" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="DotNet.Glob" />
     <PackageReference Include="Newtonsoft.Json" />

@@ -1,6 +1,6 @@
-using Alphaleonis.Win32.Vss;
 using BitShelter.Backup;
 using BitShelter.Utils;
+using BitShelter.VSS;
 using System;
 using System.Collections.Generic;
 using System.IO;

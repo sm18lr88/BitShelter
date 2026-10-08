@@ -1,5 +1,4 @@
-﻿using Alphaleonis.Win32.Vss;
-using BitShelter.Models;
+﻿using BitShelter.Models;
 using BitShelter.Service.Backup;
 using BitShelter.Service.Config;
 using BitShelter.Service.Scheduler;
@@ -53,7 +52,7 @@ namespace BitShelter.Service.Data
       if (deleteSnapshots)
         using (var vss = new VssClient(new VssHost()))
         {
-          vss.Initialize(VssSnapshotContext.All, VssBackupType.Incremental);
+          vss.Initialize(VssSnapshotContextInternal.All);
           PruningMgr.Instance.DeleteAllForRule(vss, rule);
         }
 

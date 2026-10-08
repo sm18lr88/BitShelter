@@ -1,7 +1,6 @@
 <Project>
   <!-- Central package versions (latest stable versions verified against nuget.org on 2026-10-07). -->
   <ItemGroup Label="Runtime">
-    <PackageVersion Include="AlphaVSS" Version="2.0.3" />
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.7.0" />
     <PackageVersion Include="CronExpressionDescriptor" Version="2.51.0" />
     <PackageVersion Include="DotNet.Glob" Version="3.1.3" />

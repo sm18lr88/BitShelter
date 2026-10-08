@@ -105,19 +105,11 @@ namespace BitShelter.Agent.Forms
       this.tbAdvanced = new System.Windows.Forms.TabPage();
       this.cbPruningStrategy = new System.Windows.Forms.ComboBox();
       this.lblPruningStrategy = new System.Windows.Forms.Label();
-      this.label3 = new System.Windows.Forms.Label();
-      this.tbSnapExclWriters = new System.Windows.Forms.TextBox();
-      this.tbSnapInclWriters = new System.Windows.Forms.TextBox();
-      this.lblSnapExclWriters = new System.Windows.Forms.Label();
-      this.lblSnapInclWriters = new System.Windows.Forms.Label();
       this.lblAdvWarning = new System.Windows.Forms.Label();
       this.nbSnapFailRetryCount = new System.Windows.Forms.NumericUpDown();
       this.cbSnapFailRestartVSS = new System.Windows.Forms.CheckBox();
       this.lblSnapFailRetryCount = new System.Windows.Forms.Label();
-      this.cbSnapType = new System.Windows.Forms.ComboBox();
-      this.lblSnapType = new System.Windows.Forms.Label();
-      this.cbSnapContext = new System.Windows.Forms.ComboBox();
-      this.lblSnapContext = new System.Windows.Forms.Label();
+      this.cbUseVssWriters = new System.Windows.Forms.CheckBox();
       this.lblMaxCountVal = new System.Windows.Forms.Label();
       this.lblMaxCount = new System.Windows.Forms.Label();
       this.tabControlAdv1.SuspendLayout();
@@ -1246,19 +1238,11 @@ namespace BitShelter.Agent.Forms
       // 
       this.tbAdvanced.Controls.Add(this.cbPruningStrategy);
       this.tbAdvanced.Controls.Add(this.lblPruningStrategy);
-      this.tbAdvanced.Controls.Add(this.label3);
-      this.tbAdvanced.Controls.Add(this.tbSnapExclWriters);
-      this.tbAdvanced.Controls.Add(this.tbSnapInclWriters);
-      this.tbAdvanced.Controls.Add(this.lblSnapExclWriters);
-      this.tbAdvanced.Controls.Add(this.lblSnapInclWriters);
       this.tbAdvanced.Controls.Add(this.lblAdvWarning);
       this.tbAdvanced.Controls.Add(this.nbSnapFailRetryCount);
       this.tbAdvanced.Controls.Add(this.cbSnapFailRestartVSS);
       this.tbAdvanced.Controls.Add(this.lblSnapFailRetryCount);
-      this.tbAdvanced.Controls.Add(this.cbSnapType);
-      this.tbAdvanced.Controls.Add(this.lblSnapType);
-      this.tbAdvanced.Controls.Add(this.cbSnapContext);
-      this.tbAdvanced.Controls.Add(this.lblSnapContext);
+      this.tbAdvanced.Controls.Add(this.cbUseVssWriters);
       this.tbAdvanced.Location = new System.Drawing.Point(3, 27);
       this.tbAdvanced.Name = "tbAdvanced";
       this.tbAdvanced.Size = new System.Drawing.Size(485, 397);
@@ -1270,62 +1254,19 @@ namespace BitShelter.Agent.Forms
       this.cbPruningStrategy.BackColor = System.Drawing.Color.White;
       this.cbPruningStrategy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
       this.cbPruningStrategy.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-      this.cbPruningStrategy.Location = new System.Drawing.Point(151, 181);
+      this.cbPruningStrategy.Location = new System.Drawing.Point(151, 108);
       this.cbPruningStrategy.Name = "cbPruningStrategy";
-      this.cbPruningStrategy.Size = new System.Drawing.Size(204, 21);
+      this.cbPruningStrategy.Size = new System.Drawing.Size(298, 21);
       this.cbPruningStrategy.TabIndex = 24;
       // 
       // lblPruningStrategy
       // 
       this.lblPruningStrategy.AutoSize = true;
-      this.lblPruningStrategy.Location = new System.Drawing.Point(7, 185);
+      this.lblPruningStrategy.Location = new System.Drawing.Point(7, 112);
       this.lblPruningStrategy.Name = "lblPruningStrategy";
       this.lblPruningStrategy.Size = new System.Drawing.Size(86, 13);
       this.lblPruningStrategy.TabIndex = 23;
       this.lblPruningStrategy.Text = "Pruning strategy:";
-      // 
-      // label3
-      // 
-      this.label3.AutoSize = true;
-      this.label3.Location = new System.Drawing.Point(7, 340);
-      this.label3.Name = "label3";
-      this.label3.Size = new System.Drawing.Size(99, 13);
-      this.label3.TabIndex = 22;
-      this.label3.Text = "* Comma separated";
-      // 
-      // tbSnapExclWriters
-      // 
-      this.tbSnapExclWriters.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-      this.tbSnapExclWriters.Location = new System.Drawing.Point(151, 99);
-      this.tbSnapExclWriters.Name = "tbSnapExclWriters";
-      this.tbSnapExclWriters.Size = new System.Drawing.Size(298, 20);
-      this.tbSnapExclWriters.TabIndex = 21;
-      // 
-      // tbSnapInclWriters
-      // 
-      this.tbSnapInclWriters.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-      this.tbSnapInclWriters.Location = new System.Drawing.Point(151, 72);
-      this.tbSnapInclWriters.Name = "tbSnapInclWriters";
-      this.tbSnapInclWriters.Size = new System.Drawing.Size(298, 20);
-      this.tbSnapInclWriters.TabIndex = 20;
-      // 
-      // lblSnapExclWriters
-      // 
-      this.lblSnapExclWriters.AutoSize = true;
-      this.lblSnapExclWriters.Location = new System.Drawing.Point(7, 103);
-      this.lblSnapExclWriters.Name = "lblSnapExclWriters";
-      this.lblSnapExclWriters.Size = new System.Drawing.Size(85, 13);
-      this.lblSnapExclWriters.TabIndex = 19;
-      this.lblSnapExclWriters.Text = "Exclude writers*:";
-      // 
-      // lblSnapInclWriters
-      // 
-      this.lblSnapInclWriters.AutoSize = true;
-      this.lblSnapInclWriters.Location = new System.Drawing.Point(7, 75);
-      this.lblSnapInclWriters.Name = "lblSnapInclWriters";
-      this.lblSnapInclWriters.Size = new System.Drawing.Size(82, 13);
-      this.lblSnapInclWriters.TabIndex = 18;
-      this.lblSnapInclWriters.Text = "Include writers*:";
       // 
       // lblAdvWarning
       // 
@@ -1341,7 +1282,7 @@ namespace BitShelter.Agent.Forms
       // 
       // nbSnapFailRetryCount
       // 
-      this.nbSnapFailRetryCount.Location = new System.Drawing.Point(151, 127);
+      this.nbSnapFailRetryCount.Location = new System.Drawing.Point(151, 48);
       this.nbSnapFailRetryCount.Maximum = new decimal(new int[] {
             1410065407,
             2,
@@ -1360,7 +1301,7 @@ namespace BitShelter.Agent.Forms
       // cbSnapFailRestartVSS
       // 
       this.cbSnapFailRestartVSS.AutoSize = true;
-            this.cbSnapFailRestartVSS.Location = new System.Drawing.Point(7, 157);
+      this.cbSnapFailRestartVSS.Location = new System.Drawing.Point(7, 80);
       this.cbSnapFailRestartVSS.Name = "cbSnapFailRestartVSS";
       this.cbSnapFailRestartVSS.Size = new System.Drawing.Size(185, 16);
       this.cbSnapFailRestartVSS.TabIndex = 15;
@@ -1369,49 +1310,20 @@ namespace BitShelter.Agent.Forms
       // lblSnapFailRetryCount
       // 
       this.lblSnapFailRetryCount.AutoSize = true;
-      this.lblSnapFailRetryCount.Location = new System.Drawing.Point(7, 131);
+      this.lblSnapFailRetryCount.Location = new System.Drawing.Point(7, 52);
       this.lblSnapFailRetryCount.Name = "lblSnapFailRetryCount";
       this.lblSnapFailRetryCount.Size = new System.Drawing.Size(122, 13);
       this.lblSnapFailRetryCount.TabIndex = 9;
       this.lblSnapFailRetryCount.Text = "On failure: retry count:";
       // 
-      // cbSnapType
+      // cbUseVssWriters
       // 
-      this.cbSnapType.BackColor = System.Drawing.Color.White;
-      this.cbSnapType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this.cbSnapType.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-      this.cbSnapType.Location = new System.Drawing.Point(151, 43);
-      this.cbSnapType.Name = "cbSnapType";
-      this.cbSnapType.Size = new System.Drawing.Size(204, 21);
-      this.cbSnapType.TabIndex = 8;
-      // 
-      // lblSnapType
-      // 
-      this.lblSnapType.AutoSize = true;
-      this.lblSnapType.Location = new System.Drawing.Point(7, 47);
-      this.lblSnapType.Name = "lblSnapType";
-      this.lblSnapType.Size = new System.Drawing.Size(78, 13);
-      this.lblSnapType.TabIndex = 7;
-      this.lblSnapType.Text = "Snapshot type:";
-      // 
-      // cbSnapContext
-      // 
-      this.cbSnapContext.BackColor = System.Drawing.Color.White;
-      this.cbSnapContext.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this.cbSnapContext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-      this.cbSnapContext.Location = new System.Drawing.Point(151, 15);
-      this.cbSnapContext.Name = "cbSnapContext";
-      this.cbSnapContext.Size = new System.Drawing.Size(204, 21);
-      this.cbSnapContext.TabIndex = 6;
-      // 
-      // lblSnapContext
-      // 
-      this.lblSnapContext.AutoSize = true;
-      this.lblSnapContext.Location = new System.Drawing.Point(7, 19);
-      this.lblSnapContext.Name = "lblSnapContext";
-      this.lblSnapContext.Size = new System.Drawing.Size(93, 13);
-      this.lblSnapContext.TabIndex = 5;
-      this.lblSnapContext.Text = "Snapshot context:";
+      this.cbUseVssWriters.AutoSize = true;
+      this.cbUseVssWriters.Location = new System.Drawing.Point(7, 17);
+      this.cbUseVssWriters.Name = "cbUseVssWriters";
+      this.cbUseVssWriters.Size = new System.Drawing.Size(300, 17);
+      this.cbUseVssWriters.TabIndex = 6;
+      this.cbUseVssWriters.Text = "Ask applications to save their data first (VSS writers)";
       // 
       // lblMaxCountVal
       // 
@@ -1584,16 +1496,8 @@ namespace BitShelter.Agent.Forms
     private System.Windows.Forms.NumericUpDown nbSnapFailRetryCount;
     private System.Windows.Forms.CheckBox cbSnapFailRestartVSS;
     private System.Windows.Forms.Label lblSnapFailRetryCount;
-    private System.Windows.Forms.ComboBox cbSnapType;
-    private System.Windows.Forms.Label lblSnapType;
-    private System.Windows.Forms.ComboBox cbSnapContext;
-    private System.Windows.Forms.Label lblSnapContext;
+    private System.Windows.Forms.CheckBox cbUseVssWriters;
     private System.Windows.Forms.Label lblAdvWarning;
-    private System.Windows.Forms.Label lblSnapExclWriters;
-    private System.Windows.Forms.Label lblSnapInclWriters;
-    private System.Windows.Forms.Label label3;
-    private System.Windows.Forms.TextBox tbSnapExclWriters;
-    private System.Windows.Forms.TextBox tbSnapInclWriters;
     private System.Windows.Forms.ComboBox cbPruningStrategy;
     private System.Windows.Forms.Label lblPruningStrategy;
     private System.Windows.Forms.Button btnSystemProtection;

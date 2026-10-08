@@ -1,5 +1,4 @@
-﻿using Alphaleonis.Win32.Vss;
-using BitShelter.Models.Enums;
+﻿using BitShelter.Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,13 +24,14 @@ namespace BitShelter.Models
 
     [DataMember]
     public VssSnapshotContextInternal VssContext { get; set; } = VssSnapshotContextInternal.ClientAccessible;
-    [DataMember]
-    public VssBackupTypeInternal VssBackupType { get; set; } = VssBackupTypeInternal.Incremental;
 
-    [DataMember]
-    public List<string> VssIncludeWriters { get; set; } = new List<string>();
-    [DataMember]
-    public List<string> VssExcludeWriters { get; set; } = new List<string>();
+    // Rules from earlier versions can hold other contexts. A context with VSS writers maps to ClientAccessibleWriters,
+    // any other to ClientAccessible: these are the two persistent contexts that File Explorer shows as Previous Versions.
+    public bool UsesVssWriters => VssContext != VssSnapshotContextInternal.All && ((uint)VssContext & 0x10) == 0;
+
+    public VssSnapshotContextInternal SnapshotContext => UsesVssWriters
+      ? VssSnapshotContextInternal.ClientAccessibleWriters
+      : VssSnapshotContextInternal.ClientAccessible;
 
     // Rules saved before this setting existed load as Local, which keeps their earlier behavior.
     [DataMember]

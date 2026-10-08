@@ -7,9 +7,6 @@ are at the end of this file.
 
 MIT
 ---
-* .NET IJW host (Ijwhost.dll, used by AlphaVSS) 10.0
-  Copyright (c) .NET Foundation and Contributors
-  https://github.com/dotnet/runtime
 * BouncyCastle.Cryptography 2.7.0
   Copyright © Legion of the Bouncy Castle Inc. 2000-2026
   https://www.bouncycastle.org/stable/nuget/csharp/website
@@ -88,12 +85,6 @@ MIT
 
 Apache-2.0
 ----------
-* AlphaVSS 2.0.3
-  Copyright © Peter Palotas
-  https://alphavss.alphaleonis.com/
-* AlphaVSS.Native.NetCore 2.0.3
-  Copyright © Peter Palotas
-  https://alphavss.alphaleonis.com/
 * Quartz 4.4.0
   Copyright Marko Lahma
   https://www.quartz-scheduler.net/

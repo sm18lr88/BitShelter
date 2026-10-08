@@ -20,6 +20,7 @@ namespace BitShelter.Tests.Agent
       {
         SnapshotRule rule = Generate(Create<EditSnapshotRuleForm>((SnapshotRule?)null));
         rule.PruningStrategy = PruningStrategy.Local;
+        rule.VssContext = VssSnapshotContextInternal.ClientAccessibleWriters;
         rule.RetryRestartVSSService = true;
         rule.MaxRetryCount = 2;
         rule.BackupEnabled = true;
@@ -28,6 +29,7 @@ namespace BitShelter.Tests.Agent
         SnapshotRule saved = Generate(Create<EditSnapshotRuleForm>(rule));
 
         Assert.Equal(PruningStrategy.Local, saved.PruningStrategy);
+        Assert.Equal(VssSnapshotContextInternal.ClientAccessibleWriters, saved.VssContext);
         Assert.True(saved.RetryRestartVSSService);
         Assert.Equal(2, saved.MaxRetryCount);
         Assert.True(saved.BackupEnabled);
@@ -46,6 +48,7 @@ namespace BitShelter.Tests.Agent
         Assert.Equal(DailyFreq.Every, rule.DailyFreq);
         Assert.Equal(4 * 60, rule.DailyFreqEvery);
         Assert.False(rule.RetryRestartVSSService);
+        Assert.Equal(VssSnapshotContextInternal.ClientAccessible, rule.VssContext);
         Assert.Equal(3, rule.MaxRetryCount);
         Assert.Equal(PruningStrategy.Global, rule.PruningStrategy);
         Assert.Equal((1, Timespan.Week), (rule.LifeTimeValue, rule.LifeTimeUnit));

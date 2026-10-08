@@ -1,4 +1,3 @@
-using Alphaleonis.Win32.Vss;
 using BitShelter.Models;
 using BitShelter.VSS;
 using System;

@@ -11,6 +11,7 @@ namespace BitShelter.Service
     static void Main()
     {
       DebugMode();
+      VSS.VssClient.InitializeProcessSecurity();
 
       ServiceBase[] ServicesToRun;
       ServicesToRun = new ServiceBase[]

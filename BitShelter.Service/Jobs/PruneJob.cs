@@ -1,5 +1,5 @@
-using Alphaleonis.Win32.Vss;
 using BitShelter.Data;
+using BitShelter.Models;
 using BitShelter.Service.Data;
 using BitShelter.Utils;
 using BitShelter.VSS;
@@ -23,7 +23,7 @@ namespace BitShelter.Service.Jobs
       try
       {
         vss = new VssClient(new VssHost());
-        vss.Initialize(VssSnapshotContext.All, VssBackupType.Incremental);
+        vss.Initialize(VssSnapshotContextInternal.All);
 
         PruningMgr.Instance.DoPruning(vss);
       }

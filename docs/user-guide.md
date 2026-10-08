@@ -86,6 +86,7 @@ A new rule starts with these settings. You can change all of them.
 |---|---|---|
 | Schedule | Every 4 hours, every day | BitShelter does not catch up on missed times. If the computer is off or asleep at a scheduled time, that snapshot is skipped. With a single daily time, a computer that is often off at that time gets few snapshots. |
 | Lifetime | 1 week | 42 snapshots per drive, under the Windows default limit of 64. |
+| VSS writers | Off | Without writers, snapshots are faster. Files that an application has open are saved as if the power had failed at that moment. |
 | Retry count | 3 | A failed snapshot is tried again, one minute apart. |
 | Restart VSS on failure | Off | A restart can make other programs that use VSS at that time fail. |
 | Pruning strategy | Global | Keeps room under the snapshot limit by deleting this rule's oldest snapshot, instead of letting Windows delete a System Restore point. |
@@ -132,6 +133,7 @@ The Agent protects a backup passphrase with DPAPI (local machine scope). The pla
 
 The [Advanced tab](../Resources/BitShelter.Agent_Advanced.png) of the rule editor has these options:
 
+- **Ask applications to save their data first (VSS writers)**: before each snapshot, Windows asks applications that support VSS (for example, databases and Hyper-V) to write their data to disk, so their files in the snapshot are consistent. Windows uses this mode for its own restore points. Snapshots take a little longer. If an application fails, the snapshot is still made and a warning is logged. Off by default.
 - **On failure: retry count**: how many times the service tries a failed snapshot again, one minute apart.
 - **On failure: restart the VSS service**: before each retry, restart the Volume Shadow Copy service. This can fix a VSS service in a bad state, but other programs that use VSS at that moment can fail. Off by default.
 - **Pruning strategy**:

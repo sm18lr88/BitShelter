@@ -50,4 +50,4 @@ This program will not transfer any information to other networked systems unless
 
 BitShelter is released under the [MIT License](LICENSE). All dependencies are open source; [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) lists them with their licenses.
 
-Thanks to Alexis Incogito, who created BitShelter; Peter Palotas for [AlphaVSS](https://github.com/alphaleonis/AlphaVSS); and @Zelss for the Boot Camp fix.
+Thanks to Alexis Incogito, who created BitShelter; Peter Palotas for [AlphaVSS](https://github.com/alphaleonis/AlphaVSS), which BitShelter used until version 0.2.0; and @Zelss for the Boot Camp fix.

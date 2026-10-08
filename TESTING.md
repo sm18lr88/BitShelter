@@ -19,7 +19,7 @@ The suite covers:
 - The pipe ACL: only the service account and Administrators are granted access
 - Atomic state-file writes and `rule_*.json` retention (`BitShelter.Service/Config/ConfigLoader.cs`)
 - Quartz 4 runtime behavior: rule triggers rebuilt with a past start do not fire early, and jobs receive `RuleId` by property injection
-- AlphaVSS: the x64 C++/CLI platform assembly loads in the current runtime (no VSS service access)
+- VSS interop: the native `VSS_SNAPSHOT_PROP` and `VSS_OBJECT_PROP` layouts match `vss.h`, and VSS errors are reported by name (no VSS service access)
 - Schedule helpers, path filters, `schtasks` argument quoting, and small utilities
 - Backup rules: the Every/Offset schedule, output names, and retention by count and total size
 - The backup engine on normal folders: zip, tar.gz, folder copy, filters, the size limit, and old-backup deletion
@@ -33,7 +33,7 @@ The named-pipe tests connect to a pipe that only Administrators can open, and th
 
 #### Privileged VSS test (opt-in)
 
-`VssBackupIntegrationTests` creates a real shadow copy of the drive of `%TEMP%`, changes a file, and checks that the backup contains the version from the snapshot. At the end, it deletes the shadow copy. The test is skipped unless you set `BITSHELTER_VSS_TESTS=1`. Run it from an elevated shell:
+`VssBackupIntegrationTests` creates a real shadow copy of the drive of `%TEMP%`, once without and once with VSS writers, changes a file, and checks that the backup contains the version from the snapshot. At the end, it deletes the shadow copy. The test is skipped unless you set `BITSHELTER_VSS_TESTS=1`. Run it from an elevated shell:
 
 - PowerShell: `$env:BITSHELTER_VSS_TESTS = "1"; dotnet test --project .\BitShelter.Tests -c Release --filter-class "*VssBackupIntegrationTests"`
 

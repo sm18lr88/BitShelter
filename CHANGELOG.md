@@ -28,6 +28,8 @@ This release moves BitShelter to .NET 10 and Windows 11, and adds backups.
 - New project-owned icon and "how it works" diagram. New screenshots of Windows 11 and of the current Agent.
 - New rules take a snapshot every 4 hours instead of once a day at 08:00, because missed times are not caught up. **On failure: restart the VSS service** is off by default, and the total backup size has no limit by default.
 - The service accepts up to four Agent connections at the same time.
+- VSS access uses BitShelter's own COM interop on .NET source-generated COM, declared from the Windows SDK headers, instead of AlphaVSS. The installer no longer ships a C++/CLI assembly or `Ijwhost.dll`. VSS errors in the log now name the VSS error code.
+- The Advanced tab has one VSS option, **Ask applications to save their data first (VSS writers)**, instead of the snapshot context, snapshot type, and include/exclude writer fields. The old snapshot type was ignored, and two of the old contexts made snapshots that Windows deleted at once. Rules from earlier versions keep their choice: a context with writers maps to the new option.
 - The README is short. Details are in the new [user guide](docs/user-guide.md).
 
 #### Removed
