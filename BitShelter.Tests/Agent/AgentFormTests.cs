@@ -35,6 +35,25 @@ namespace BitShelter.Tests.Agent
       });
     }
 
+    [Fact]
+    public void New_rule_defaults_to_snapshots_every_4_hours_without_VSS_restart_or_total_backup_limit()
+    {
+      RunOnStaThread(() =>
+      {
+        SnapshotRule rule = Generate(Create<EditSnapshotRuleForm>((SnapshotRule?)null));
+
+        Assert.Equal(Freq.Daily, rule.Freq);
+        Assert.Equal(DailyFreq.Every, rule.DailyFreq);
+        Assert.Equal(4 * 60, rule.DailyFreqEvery);
+        Assert.False(rule.RetryRestartVSSService);
+        Assert.Equal(3, rule.MaxRetryCount);
+        Assert.Equal(PruningStrategy.Global, rule.PruningStrategy);
+        Assert.Equal((1, Timespan.Week), (rule.LifeTimeValue, rule.LifeTimeUnit));
+        Assert.False(rule.BackupEnabled);
+        Assert.Equal(0, rule.BackupTotalMaxSize);
+      });
+    }
+
     [Theory]
     [InlineData(ArchiveType.Tar, CompressionType.GZip)]
     [InlineData(ArchiveType.Zip, CompressionType.Deflate)]

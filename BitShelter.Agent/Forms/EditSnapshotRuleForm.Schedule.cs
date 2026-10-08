@@ -25,7 +25,11 @@ namespace BitShelter.Agent.Forms
     {
       DayCheckboxes = new[] { cbFreqWeeklySunday, cbFreqWeeklyMonday, cbFreqWeeklyTuesday, cbFreqWeeklyWednesday, cbFreqWeeklyThursday, cbFreqWeeklyFriday, cbFreqWeeklySaturday };
 
-      ChangeDailyFreq(DailyFreq.Once);
+      // Default: a snapshot every 4 hours. Missed times (computer off or asleep) are skipped, so a single
+      // daily time can miss many days. 42 snapshots per week also fit the Windows default limit of 64.
+      SelectDailyFreq(DailyFreq.Every);
+      ChangeDailyFreq(DailyFreq.Every);
+      nbDailyFreqEvery.Value = 4;
       ChangeFreq(Freq.Daily);
       ChangeFreqWeekly(FreqWeekly.Weekly);
 

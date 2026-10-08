@@ -26,6 +26,9 @@ This release moves BitShelter to .NET 10 and Windows 11, and adds backups.
 - Scheduling uses Quartz 4. Logging uses Serilog 4.
 - The service writes its state files atomically.
 - New project-owned icon and "how it works" diagram. New screenshots of Windows 11 and of the current Agent.
+- New rules take a snapshot every 4 hours instead of once a day at 08:00, because missed times are not caught up. **On failure: restart the VSS service** is off by default, and the total backup size has no limit by default.
+- The service accepts up to four Agent connections at the same time.
+- The README is short. Details are in the new [user guide](docs/user-guide.md).
 
 #### Removed
 
@@ -35,6 +38,7 @@ This release moves BitShelter to .NET 10 and Windows 11, and adds backups.
 
 #### Fixed
 
+- New rules got the **Local** pruning strategy instead of **Global**.
 - Help links in the Agent did not open on .NET 10.
 - The rule editor did not open, because of controls that were left over from the Syncfusion removal.
 - Buttons with white text on a white background, and grid columns that did not scale with the display DPI.

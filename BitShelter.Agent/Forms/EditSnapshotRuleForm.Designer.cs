@@ -1200,7 +1200,7 @@ namespace BitShelter.Agent.Forms
       this.nbBackupTotalMaxSize.Size = new System.Drawing.Size(81, 20);
       this.nbBackupTotalMaxSize.TabIndex = 5;
       this.nbBackupTotalMaxSize.Value = new decimal(new int[] {
-            1,
+            0,
             0,
             0,
             0});
@@ -1360,9 +1360,7 @@ namespace BitShelter.Agent.Forms
       // cbSnapFailRestartVSS
       // 
       this.cbSnapFailRestartVSS.AutoSize = true;
-      this.cbSnapFailRestartVSS.Checked = true;
-      this.cbSnapFailRestartVSS.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.cbSnapFailRestartVSS.Location = new System.Drawing.Point(7, 157);
+            this.cbSnapFailRestartVSS.Location = new System.Drawing.Point(7, 157);
       this.cbSnapFailRestartVSS.Name = "cbSnapFailRestartVSS";
       this.cbSnapFailRestartVSS.Size = new System.Drawing.Size(185, 16);
       this.cbSnapFailRestartVSS.TabIndex = 15;

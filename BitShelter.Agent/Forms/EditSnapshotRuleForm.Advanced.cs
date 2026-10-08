@@ -17,10 +17,11 @@ namespace BitShelter.Agent.Forms
       cbSnapContext.FillWithEnum(VssSnapshotContextInternal.ClientAccessible);
       cbSnapType.FillWithEnum(VssBackupTypeInternal.Incremental);
       cbPruningStrategy.FormattingEnabled = true;
-      cbPruningStrategy.FillWithEnum(PruningStrategy.Global);
+      // Attach Format before filling: adding a Format handler refreshes the items and resets the selection.
       cbPruningStrategy.Format += (_, e) => e.Value = (PruningStrategy)e.ListItem == PruningStrategy.Global
         ? "Global: also keep room under the volume limit"
         : "Local: by lifetime only";
+      cbPruningStrategy.FillWithEnum(PruningStrategy.Global);
     }
 
     public void InitEditAdvanced(SnapshotRule rule)

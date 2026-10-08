@@ -96,5 +96,5 @@ The service uses Quartz 4 with an in-memory job store. Quartz keeps no data on d
 
 ### Known gaps
 
-- BitShelter has no restore function for backups. Users restore with standard tools (see the README).
+- BitShelter has no restore function for backups. Users restore with standard tools (see the [user guide](docs/user-guide.md#backups)).
 - An encrypted zip backup cannot use Zip64, so it is limited to 4 GB. Encrypted tar backups have no such limit.

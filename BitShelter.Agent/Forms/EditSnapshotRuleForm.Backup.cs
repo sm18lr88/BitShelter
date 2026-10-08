@@ -20,6 +20,10 @@ namespace BitShelter.Agent.Forms
     {
       cbBackupTotalMaxSizeUnit.FillWithEnum(MediumStorageUnit.GB);
 
+      var tip = new ToolTip(components);
+      tip.SetToolTip(nbBackupTotalMaxSize, "Total size of all backups of this rule. 0 = no limit.");
+      tip.SetToolTip(lblBackupTotalMaxSize, "Total size of all backups of this rule. 0 = no limit.");
+
       btnBackupEdit = new Button
       {
         Anchor = btnBackupAdd.Anchor,

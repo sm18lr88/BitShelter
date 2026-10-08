@@ -34,5 +34,5 @@ BitShelter runs on **Windows 11 (x64)** with **.NET 10**. The build policy mirro
 - Do not add third-party documents, images, logos, or tool files to the repository. Use links instead. The icon (`BitShelter.Agent/BitShelter.ico`), the screenshots, and `Resources/how-it-works.svg` are project-owned.
 - Releases: see `RELEASING.md`. A `v*` tag runs `.github/workflows/release.yml`. Keep `<Version>` in `Directory.Build.props` and the `CHANGELOG.md` section in step with the tag.
 - Keep source files under about 250 lines when reasonable (designer-generated files and the vendored `VssClient` are known exceptions).
-- Keep changes focused. Update `README.md` when behavior or requirements change. Update `ARCHITECTURE.md` when components, IPC, state files, or scheduling change.
+- Keep changes focused. Update `docs/user-guide.md` when behavior changes, and `README.md` when requirements or the overview change. Keep the README short. Update `ARCHITECTURE.md` when components, IPC, state files, or scheduling change.
 - Write docs in plain, simple English: short sentences, active voice, one term for each concept.
