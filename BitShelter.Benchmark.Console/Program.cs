@@ -29,12 +29,13 @@ namespace BitShelter.Benchmark.Console
         res.Print(iterations);
 
       new TableExport(results, sizeB, iterations)
-        .ExportXls(Path.Combine(
+        .ExportCsv(Path.Combine(
           Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-          String.Format("BitShelter_Bench_{0}.xls", DateTime.Now.Ticks)
+          String.Format("BitShelter_Bench_{0}.csv", DateTime.Now.Ticks)
         ));
 
-      System.Console.ReadKey();
+      if (!System.Console.IsInputRedirected)
+        System.Console.ReadKey();
     }
   }
 }

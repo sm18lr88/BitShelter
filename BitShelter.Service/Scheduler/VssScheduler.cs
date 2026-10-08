@@ -1,4 +1,4 @@
-﻿using BitShelter.Data;
+using BitShelter.Data;
 using BitShelter.Models;
 using BitShelter.Service.Jobs;
 using Quartz;
@@ -24,7 +24,7 @@ namespace BitShelter.Service.Scheduler
 
     public static void CreateAllTriggers(IEnumerable<SnapshotRule> rules)
     {
-      QuartzScheduler.Instance.Scheduler.Clear().Wait();
+      QuartzScheduler.Instance.Scheduler.Clear().GetAwaiter().GetResult();
 
       CreatePruneJobTrigger();
       CreateSnapshotJobTriggers(rules);
@@ -33,10 +33,10 @@ namespace BitShelter.Service.Scheduler
     private static void CreatePruneJobTrigger()
     {
       ITrigger pruneTrigger = TriggerBuilder.Create()
-        .WithSimpleSchedule(s => s.WithIntervalInMinutes(1).RepeatForever())
+        .WithSimpleSchedule(s => s.WithInterval(TimeSpan.FromMinutes(1)).RepeatForever())
         .Build();
 
-      QuartzScheduler.Instance.Scheduler.ScheduleJob(PruneJob, pruneTrigger).Wait();
+      QuartzScheduler.Instance.Scheduler.ScheduleJob(PruneJob, pruneTrigger).GetAwaiter().GetResult();
     }
 
     private static void CreateSnapshotJobTriggers(IEnumerable<SnapshotRule> rules)
@@ -46,7 +46,7 @@ namespace BitShelter.Service.Scheduler
       foreach (var rule in rules.Where(r => r.Enabled))
       {
         if (rule.HasCalendar())
-          QuartzScheduler.Instance.Scheduler.AddCalendar(rule.GetCalendarName(), rule.GetCalendar(), true, true).Wait();
+          QuartzScheduler.Instance.Scheduler.AddCalendar(rule.GetCalendarName(), rule.GetCalendar(), AddCalendarOptions.ReplacingAndUpdatingTriggers).GetAwaiter().GetResult();
 
         snapshotTriggers.Add(rule.GetTrigger());
       }
@@ -56,7 +56,7 @@ namespace BitShelter.Service.Scheduler
         { SnapshotJob, snapshotTriggers }
       };
 
-      QuartzScheduler.Instance.Scheduler.ScheduleJobs(newSchedules, true).Wait();
+      QuartzScheduler.Instance.Scheduler.ScheduleJobs(newSchedules, ScheduleJobOptions.Replacing).GetAwaiter().GetResult();
     }
   }
 }

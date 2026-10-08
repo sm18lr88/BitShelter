@@ -1,25 +1,24 @@
-﻿using BitShelter.VSS;
-using Syncfusion.Windows.Forms;
+using BitShelter.VSS;
 using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace BitShelter.Agent.Forms
 {
-  public partial class SnapshotLimitForm : MetroForm
+  public partial class SnapshotLimitForm : Form
   {
     public SnapshotLimitForm()
     {
       InitializeComponent();
 
-      lblMicrosoftRef.Links.Add(0, 0, "https://msdn.microsoft.com/en-us/library/bb891959.aspx?#maxshadowcopies");
+      lblMicrosoftRef.Links.Add(0, 0, "https://learn.microsoft.com/en-us/windows/win32/backup/registry-keys-for-backup-and-restore#maxshadowcopies");
 
       nbLimit.Value = VssUtils.GetSnapshotLimit();
     }
 
     private void lblMicrosoftRef_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
-      Process.Start(e.Link.LinkData as string);
+      Process.Start(new ProcessStartInfo(e.Link.LinkData as string) { UseShellExecute = true })?.Dispose();
     }
 
     private void button1_Click(object sender, EventArgs e)

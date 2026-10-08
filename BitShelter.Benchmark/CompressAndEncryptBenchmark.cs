@@ -1,131 +1,90 @@
-﻿using BitShelter.Benchmark.Models;
+using BitShelter.Benchmark.Models;
 using BitShelter.Encryption;
 using BitShelter.IO;
 using BitShelter.Models;
 using SharpCompress.Common;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 
 namespace BitShelter.Benchmark
 {
+  // Measures each archive, compression, and OpenPGP encryption combination that backups can use.
   public static class CompressAndEncryptBenchmark
   {
-    public static IEnumerable<CEBenchResult> Run(
-    Stream inStream, int iterationNb, ProgressStreamReportDelegate inReadCallback)
-    {
-      if (inReadCallback != null)
-      {
-        inStream = new ProgressStream(inStream);
-        ((ProgressStream)inStream).BytesRead += inReadCallback;
-      }
-
-      var ret = Run(inStream, iterationNb);
-
-      if (inReadCallback != null)
-        ((ProgressStream)inStream).BytesRead -= inReadCallback;
-
-      return ret;
-    }
-
     public static IEnumerable<CEBenchResult> Run(Stream inStream, int iterationNb)
     {
-      List<CEBenchResult> ret = new List<CEBenchResult>();
-      Stopwatch sw = new Stopwatch();
+      var results = new List<CEBenchResult>();
+      var stopwatch = new Stopwatch();
 
-
-      foreach (ArchiveType at in CompressionHelper.AvailableArchives)
-      {
-        foreach (CompressionType ct in at.GetAvailableCompressions())
-        {
-          foreach (EncryptionProtocol ep in EncryptionHelper.AvailableProtocols)
+      foreach (ArchiveType archiveType in CompressionHelper.AvailableArchives)
+        foreach (CompressionType compressionType in archiveType.GetAvailableCompressions())
+          foreach ((BackupEncryption encryption, EncryptionAlgorithm algorithm) in GetEncryptions())
           {
-            foreach (EncryptionAlgorithm ea in ep.GetAvailableAlgorithms())
+            long compressedSize = 0;
+
+            stopwatch.Restart();
+
+            for (int i = 0; i < iterationNb; i++)
             {
-              long compSize = 0;
-
-              sw.Reset();
-              sw.Start();
-
-              for (int i = 0; i < iterationNb; i++)
-              {
-
-
-                inStream.Seek(0, SeekOrigin.Begin);
-                compSize = Process(inStream, at, ct, ep, ea);
-              }
-
-              sw.Stop();
-
-              ret.Add(new CEBenchResult()
-              {
-                ArchiveType = at,
-                CompressionType = ct,
-                EncryptionProtocol = ep,
-                EncryptionAlgorithm = ea,
-                TotalRuntime = sw.ElapsedMilliseconds,
-                CompressedSize = compSize
-              });
+              inStream.Seek(0, SeekOrigin.Begin);
+              compressedSize = Process(inStream, archiveType, compressionType, encryption, algorithm);
             }
-          }
-        }
-      }
 
-      return ret;
+            stopwatch.Stop();
+
+            results.Add(new CEBenchResult
+            {
+              ArchiveType = archiveType,
+              CompressionType = compressionType,
+              Encryption = encryption,
+              EncryptionAlgorithm = algorithm,
+              TotalRuntime = stopwatch.ElapsedMilliseconds,
+              CompressedSize = compressedSize,
+            });
+          }
+
+      return results;
     }
 
-    public static long Process(
-      Stream data,
-      ArchiveType archiveType, CompressionType compType,
-      EncryptionProtocol encProtocol, EncryptionAlgorithm encAlgorithm)
+    private static IEnumerable<(BackupEncryption, EncryptionAlgorithm)> GetEncryptions()
+    {
+      yield return (BackupEncryption.None, EncryptionAlgorithm.None);
+
+      foreach (EncryptionAlgorithm cipher in OpenPgpEncryption.Ciphers)
+      {
+        yield return (BackupEncryption.PgpPassphrase, cipher);
+        yield return (BackupEncryption.PgpPublicKey, cipher);
+      }
+    }
+
+    // Returns the size of the archive file, after encryption.
+    public static long Process(Stream data, ArchiveType archiveType, CompressionType compressionType, BackupEncryption encryption, EncryptionAlgorithm algorithm)
     {
       string fileName = Path.GetTempFileName();
-      FileInfo fileInfo = new FileInfo(fileName);
-      long compSizeB = 0;
 
-      ProgressStreamReportDelegate progressCallback =
-        (_, args) => compSizeB += args.BytesMoved;
-
-      using (Stream outFileStream = fileInfo.OpenWrite())
+      try
       {
-        Action<Stream> streamWriter =
-          (outStream) => CompressionHelper.Compress(
-            "data.bin",
-            data,
-            outStream,
-            archiveType,
-            compType,
-            progressCallback
-          );
+        using (Stream file = File.Create(fileName))
+        using (Stream encrypted = OpenEncryption(file, encryption, algorithm))
+          CompressionHelper.Compress("data.bin", data, encrypted ?? file, archiveType, compressionType, null);
 
-        switch (encProtocol)
-        {
-          case EncryptionProtocol.None:
-            streamWriter(outFileStream);
-            break;
-
-          case EncryptionProtocol.AES:
-            EncryptionHelper.EncryptStreamAES(streamWriter, outFileStream, encAlgorithm, Const.EncKey32);
-            break;
-
-          case EncryptionProtocol.PBE:
-            EncryptionHelper.EncryptStreamPBE(streamWriter, outFileStream, encAlgorithm, Const.EncKey32);
-            break;
-
-          case EncryptionProtocol.PGP:
-            using (Stream pgpPubKeyStream = new MemoryStream(Encoding.ASCII.GetBytes(Const.PGPPubKey)))
-            EncryptionHelper.EncryptStreamPGP(
-              streamWriter, outFileStream, encAlgorithm,
-              pgpPubKeyStream, Convert.ToInt64(Const.PGPPubKeyID, 16));
-            break;
-        }
+        return new FileInfo(fileName).Length;
       }
+      finally
+      {
+        File.Delete(fileName);
+      }
+    }
 
-      fileInfo.Delete();
-
-      return compSizeB;
+    private static Stream OpenEncryption(Stream output, BackupEncryption encryption, EncryptionAlgorithm algorithm)
+    {
+      return encryption switch
+      {
+        BackupEncryption.PgpPassphrase => OpenPgpEncryption.OpenForPassphrase(output, Const.Passphrase, algorithm, "data.bin"),
+        BackupEncryption.PgpPublicKey => OpenPgpEncryption.OpenForPublicKey(output, Const.PGPPubKey, algorithm, "data.bin"),
+        _ => null,
+      };
     }
   }
 }

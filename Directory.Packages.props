@@ -1,0 +1,40 @@
+<Project>
+  <!-- Central package versions (latest stable versions verified against nuget.org on 2026-10-07). -->
+  <ItemGroup Label="Runtime">
+    <PackageVersion Include="AlphaVSS" Version="2.0.3" />
+    <PackageVersion Include="BouncyCastle.Cryptography" Version="2.7.0" />
+    <PackageVersion Include="CronExpressionDescriptor" Version="2.51.0" />
+    <PackageVersion Include="DotNet.Glob" Version="3.1.3" />
+    <PackageVersion Include="EWSoftware.ListControls" Version="2024.12.31" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="Quartz" Version="4.4.0" />
+    <PackageVersion Include="SharpCompress" Version="1.0.0" />
+    <PackageVersion Include="System.Management" Version="10.0.12" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+    <PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Label="Logging">
+    <PackageVersion Include="Serilog" Version="4.4.0" />
+    <PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
+    <PackageVersion Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageVersion Include="Serilog.Sinks.EventLog" Version="4.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Installer">
+    <!-- WiX 6+ requires accepting the OSMF EULA; WiX 5 is plain MS-RL. Stay on 5.x to keep the toolchain fully open source. -->
+    <PackageVersion Include="WixToolset.Heat" Version="5.0.2" />
+    <PackageVersion Include="WixToolset.Netfx.wixext" Version="5.0.2" />
+    <PackageVersion Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageVersion Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="coverlet.MTP" Version="10.1.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+  </ItemGroup>
+</Project>

@@ -42,9 +42,9 @@ Exception is: {2}";
 
     public static void Shutdown(IAppHost appHost)
     {
-      Logger.Instance.Shutdown();
-
       appHost.Shutdown();
+
+      Logger.Instance.Shutdown();
     }
   }
 }

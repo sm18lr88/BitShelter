@@ -8,10 +8,10 @@ namespace BitShelter.Benchmark
 {
   public static class Const
   {
-    public const string EncKey32 = "R>Hb4J&N0S36c{|'H:-vssgy8{Ae@0E_";
+    // Benchmark data only. This is not a secret.
+    public const string Passphrase = "benchmark passphrase, not a secret";
 
-    // Dummy PGP key, don't use.
-    public const string PGPPubKeyID = "0xe7ca8c8e7ee65cf2";
+    // Public key of a dummy OpenPGP key pair. Do not use it for real data.
     public const string PGPPubKey = @"-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQENBFrTOtgBCADXGw3AyvyZZ1QHSKMqmI9mU8rnmtR228FaueoT8lWGY/73Irxi

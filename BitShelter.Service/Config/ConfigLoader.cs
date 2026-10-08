@@ -1,5 +1,6 @@
 ﻿using BitShelter.Models;
 using Newtonsoft.Json;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,8 @@ namespace BitShelter.Service.Config
   {
     public const string AppConfigFileName = "appconfig.json";
     public const string SnapshotInstancesFileName = "instances.json";
-    public const string RuleFileNameRegexPattern = "rule_([0-9]+)\\.json";
+    public const string RuleFileNameRegexPattern = "^rule_([0-9]+)\\.json$";
+    public const int RuleFileHistoryCount = 10;
     public static readonly Regex RuleFileNameRegex = new Regex(RuleFileNameRegexPattern);
 
 
@@ -30,19 +32,26 @@ namespace BitShelter.Service.Config
 
     public static async Task<IEnumerable<SnapshotInstance>> LoadSnapshotInstances()
     {
-      string snapshotInstancesFilePath = GetSnapshotInstancesFilePath();
+      return await LoadTrustedJson<IEnumerable<SnapshotInstance>>(GetSnapshotInstancesFilePath());
+    }
 
-      return await SafeLoadJson<IEnumerable<SnapshotInstance>>(snapshotInstancesFilePath);
+    // Loads a state file only if SYSTEM or Administrators own it. See AppDataSecurity.
+    public static async Task<T> LoadTrustedJson<T>(string filePath)
+    {
+      if (filePath == null || !File.Exists(filePath) || !IsTrustedStateFile(filePath))
+        return default(T);
+
+      return await SafeLoadJson<T>(filePath);
     }
 
     public static async Task<Tuple<IList<SnapshotRule>, string>> LoadLatestRules()
     {
       string appData = Const.GetAppDataFolderPath();
-      string latestRulesFileName = GetLatestRulesFileName(appData);
+      string latestRulesFileName = GetLatestRulesFileName(appData, IsTrustedStateFile);
 
       IList<SnapshotRule> rules = latestRulesFileName == null
         ? new List<SnapshotRule>()
-        : (await SafeLoadJson<IEnumerable<SnapshotRule>>(Path.Combine(appData, latestRulesFileName))).ToList();
+        : (await SafeLoadJson<IEnumerable<SnapshotRule>>(Path.Combine(appData, latestRulesFileName)))?.ToList() ?? new List<SnapshotRule>();
 
       return new Tuple<IList<SnapshotRule>, string>(
         rules,
@@ -68,12 +77,30 @@ namespace BitShelter.Service.Config
 
     public static void SaveToFile<T>(T obj, string fileName)
     {
-      using (Stream s = File.Open(GetRulesPath(fileName), FileMode.Create, FileAccess.Write))
-      using (StreamWriter sw = new StreamWriter(s))
+      WriteJsonAtomic(GetRulesPath(fileName), obj);
+    }
+
+    // Write to a sibling temp file, flush it to disk, then swap it in. A crash mid-write leaves the
+    // previous file intact instead of a truncated one that would stop the service from starting.
+    public static void WriteJsonAtomic<T>(string filePath, T obj)
+    {
+      string tempPath = filePath + ".tmp";
+
+      using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
       {
-        string json = JsonConvert.SerializeObject(obj);
-        sw.Write(json);
+        using (var sw = new StreamWriter(fs, leaveOpen: true))
+          sw.Write(JsonConvert.SerializeObject(obj));
+
+        fs.Flush(flushToDisk: true);
       }
+
+      File.Move(tempPath, filePath, overwrite: true);
+    }
+
+    public static void DeleteOldRulesFiles(string rootFolderPath, int keepCount)
+    {
+      foreach (string filePath in GetAllRulesFileName(rootFolderPath).Skip(keepCount))
+        File.Delete(filePath);
     }
 
 
@@ -105,10 +132,20 @@ namespace BitShelter.Service.Config
       return Path.Combine(appData, rulesFileName);
     }
 
-    public static string GetLatestRulesFileName(string rootFolderPath)
+    public static string GetLatestRulesFileName(string rootFolderPath, Func<string, bool> isTrusted = null)
     {
       return GetAllRulesFileName(rootFolderPath)
-        .FirstOrDefault();
+        .FirstOrDefault(f => isTrusted == null || isTrusted(f));
+    }
+
+    private static bool IsTrustedStateFile(string filePath)
+    {
+      bool trusted = AppDataSecurity.HasTrustedOwner(filePath);
+
+      if (!trusted)
+        Log.Warning("Ignoring {FilePath}: its owner is not SYSTEM or Administrators", filePath);
+
+      return trusted;
     }
 
     public static IEnumerable<string> GetAllRulesFileName(string rootFolderPath)
@@ -120,16 +157,15 @@ namespace BitShelter.Service.Config
 
     public static bool IsRulesFileName(string fileName)
     {
-      return String.IsNullOrWhiteSpace(fileName)
-        ? false
-        : RuleFileNameRegex.Match(fileName).Success;
+      return !String.IsNullOrWhiteSpace(fileName)
+        && RuleFileNameRegex.IsMatch(Path.GetFileName(fileName));
     }
 
     public static long GetRulesTimestampFromFileName(string fileName)
     {
       return String.IsNullOrWhiteSpace(fileName)
         ? -1
-        : Int64.Parse(RuleFileNameRegex.Match(fileName).Groups[1].Value);
+        : Int64.Parse(RuleFileNameRegex.Match(Path.GetFileName(fileName)).Groups[1].Value);
     }
   }
 }

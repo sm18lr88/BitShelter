@@ -1,14 +1,9 @@
-﻿using BitShelter.Agent.Forms;
+using BitShelter.Agent.Forms;
 using BitShelter.Utils;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace BitShelter.Agent
@@ -22,8 +17,6 @@ namespace BitShelter.Agent
   /// </remarks>
   public class CustomApplicationContext : ApplicationContext
   {
-    // Icon generously provided by flaticon https://www.flaticon.com/free-icon/google-drive-logo_60958
-    private const string IconFileName = "BitShelter.ico";
     private const string ExitConfirmMessage = "Exiting the agent won't stop the service. Use the Windows Service manager to stop BitShelter.";
     private const string ExitConfirmTitle = "Confirm";
 
@@ -31,6 +24,7 @@ namespace BitShelter.Agent
     private IContainer components;
     private NotifyIcon trayIcon;
     private ContextMenuStrip trayContextMenuStrip;
+    private BackupNotifier backupNotifier;
 
     public ToolStripMenuItem RunAtStartupMenuItem { get; private set; }
 
@@ -55,12 +49,11 @@ namespace BitShelter.Agent
       trayIcon.BalloonTipText = "Double click to access settings.";
       trayIcon.BalloonTipTitle = BitShelter.Const.AppName;
       trayIcon.ContextMenuStrip = trayContextMenuStrip;
-      trayIcon.Icon = new Icon(Path.Combine(Application.StartupPath, IconFileName));
+      trayIcon.Icon = AppIcon.Load();
       trayIcon.Text = BitShelter.Const.AppName;
       trayIcon.Visible = true;
 
       trayIcon.DoubleClick += settingsItem_Click;
-      trayIcon.MouseUp += trayIcon_MouseUp;
 
       RunAtStartupMenuItem = new ToolStripMenuItem("Run at startup", null, runAtStartupItem_Click);
 
@@ -74,6 +67,8 @@ namespace BitShelter.Agent
 
       RunAtStartupMenuItem.Checked = InstallUtils.TaskExists(Const.AppName);
 
+      backupNotifier = new BackupNotifier(trayIcon);
+
       // 
       // CAC
       trayContextMenuStrip.ResumeLayout(false);
@@ -85,7 +80,13 @@ namespace BitShelter.Agent
     /// <param name="disposing"></param>
     protected override void Dispose(bool disposing)
     {
-      if (disposing && components != null) { components.Dispose(); }
+      if (disposing)
+      {
+        backupNotifier?.Dispose();
+        components?.Dispose();
+      }
+
+      base.Dispose(disposing);
     }
 
     private void settingsItem_Click(object sender, EventArgs e)
@@ -110,15 +111,6 @@ namespace BitShelter.Agent
     {
       if (MessageBox.Show(ExitConfirmMessage, ExitConfirmTitle, MessageBoxButtons.OKCancel) == DialogResult.OK)
         ExitThread();
-    }
-
-    private void trayIcon_MouseUp(object sender, MouseEventArgs e)
-    {
-      if (e.Button == MouseButtons.Right)
-      {
-        MethodInfo mi = typeof(NotifyIcon).GetMethod("ShowContextMenu", BindingFlags.Instance | BindingFlags.NonPublic);
-        mi.Invoke(trayIcon, null);
-      }
     }
 
     /// <summary>

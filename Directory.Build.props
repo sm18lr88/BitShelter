@@ -1,0 +1,42 @@
+<Project>
+  <!-- Repository-wide build policy. It mirrors the SuperMemoAssistant (SMA) policy so these projects can be vendored into SMA unchanged.
+       Projects set only what differs: OutputType, UseWindowsForms, ImplicitUsings opt-in. -->
+  <PropertyGroup Label="Build">
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Platforms>x64</Platforms>
+    <Platform Condition=" '$(Platform)' == '' Or '$(Platform)' == 'AnyCPU' ">x64</Platform>
+    <!-- AlphaVSS loads a native-bitness C++/CLI assembly; the process must be x64. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Legacy sources predate nullable reference types; new projects opt in individually. -->
+    <Nullable>disable</Nullable>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
+    <!-- CA1416: Windows-only APIs in a Windows-only app. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <Version>0.2.0</Version>
+    <Authors>Alexis;BitShelter contributors</Authors>
+    <Company>BitShelter</Company>
+    <Product>BitShelter</Product>
+    <Copyright>Copyright (c) BitShelter contributors</Copyright>
+    <!-- Keep the product version equal to <Version> (no "+commit" suffix): code signing checks it for each release. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet">
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Pinned versions in Directory.Packages.props also override vulnerable transitive versions. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+  </PropertyGroup>
+</Project>

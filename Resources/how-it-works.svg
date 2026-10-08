@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="380" viewBox="0 0 900 380" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>How BitShelter works: snapshots, backups, and cloud copies</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7C3AED"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="900" height="380" rx="16" fill="#F5F3FF"/>
+  <g text-anchor="middle">
+    <g transform="translate(150,0)">
+      <circle cx="0" cy="52" r="26" fill="#7C3AED"/>
+      <text x="0" y="61" font-size="26" font-weight="700" fill="#FFFFFF">1</text>
+      <text x="0" y="112" font-size="26" font-weight="600" fill="#2E1065">Snapshot</text>
+      <text x="0" y="138" font-size="15" fill="#5B21B6">Ctrl+Z for your files</text>
+      <rect x="-125" y="158" width="250" height="140" rx="10" fill="#FFFFFF" stroke="#DDD6FE"/>
+      <text x="0" y="192" font-size="15" fill="#1F2937">Revert changes to files</text>
+      <text x="0" y="222" font-size="15" fill="#1F2937">Restore deleted files</text>
+      <text x="0" y="252" font-size="15" fill="#1F2937">Browse earlier versions</text>
+      <text x="0" y="282" font-size="13" fill="#6B7280">Almost instantaneous</text>
+      <text x="0" y="340" font-size="14" fill="#4C1D95">On the same drive</text>
+    </g>
+    <g transform="translate(450,0)">
+      <circle cx="0" cy="52" r="26" fill="#7C3AED"/>
+      <text x="0" y="61" font-size="26" font-weight="700" fill="#FFFFFF">2</text>
+      <text x="0" y="112" font-size="26" font-weight="600" fill="#2E1065">Backup</text>
+      <text x="0" y="138" font-size="15" fill="#5B21B6">A copy, read from a snapshot</text>
+      <rect x="-125" y="158" width="250" height="140" rx="10" fill="#FFFFFF" stroke="#DDD6FE"/>
+      <text x="0" y="192" font-size="15" fill="#1F2937">Another drive or a NAS</text>
+      <text x="0" y="222" font-size="15" fill="#1F2937">Removable drive</text>
+      <text x="0" y="252" font-size="15" fill="#1F2937">Cloud sync folder</text>
+      <text x="0" y="282" font-size="13" fill="#6B7280">Zip or tar, OpenPGP encryption</text>
+      <text x="0" y="340" font-size="14" fill="#4C1D95">On your computer or network</text>
+    </g>
+    <g transform="translate(750,0)">
+      <circle cx="0" cy="52" r="26" fill="#7C3AED"/>
+      <text x="0" y="61" font-size="26" font-weight="700" fill="#FFFFFF">3</text>
+      <text x="0" y="112" font-size="26" font-weight="600" fill="#2E1065">Cloud</text>
+      <text x="0" y="138" font-size="15" fill="#5B21B6">Through a sync folder</text>
+      <rect x="-125" y="158" width="250" height="140" rx="10" fill="#FFFFFF" stroke="#DDD6FE"/>
+      <text x="0" y="192" font-size="15" fill="#1F2937">Your cloud provider's</text>
+      <text x="0" y="217" font-size="15" fill="#1F2937">sync app uploads</text>
+      <text x="0" y="242" font-size="15" fill="#1F2937">the backups</text>
+      <text x="0" y="282" font-size="13" fill="#6B7280">BitShelter does not connect</text>
+      <text x="0" y="340" font-size="14" fill="#4C1D95">Off-site</text>
+    </g>
+  </g>
+  <line x1="280" y1="228" x2="318" y2="228" stroke="#7C3AED" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="580" y1="228" x2="618" y2="228" stroke="#7C3AED" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="300" y1="320" x2="300" y2="360" stroke="#C4B5FD" stroke-dasharray="4 4"/>
+  <line x1="600" y1="320" x2="600" y2="360" stroke="#C4B5FD" stroke-dasharray="4 4"/>
+</svg>

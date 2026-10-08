@@ -33,6 +33,10 @@ namespace BitShelter.Models
     [DataMember]
     public List<string> VssExcludeWriters { get; set; } = new List<string>();
 
+    // Rules saved before this setting existed load as Local, which keeps their earlier behavior.
+    [DataMember]
+    public PruningStrategy PruningStrategy { get; set; } = PruningStrategy.Local;
+
     [DataMember]
     public int MaxRetryCount { get; set; }
     [DataMember]

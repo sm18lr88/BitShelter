@@ -1,5 +1,8 @@
-﻿using Alphaleonis.Win32.Vss;
+using Alphaleonis.Win32.Vss;
+using BitShelter.Backup;
 using BitShelter.Models;
+using BitShelter.Models.Enums;
+using BitShelter.Service.Backup;
 using BitShelter.Service.Data;
 using BitShelter.Service.Scheduler;
 using BitShelter.Utils;
@@ -7,6 +10,9 @@ using BitShelter.VSS;
 using Quartz;
 using Serilog;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BitShelter.Service.Jobs
@@ -18,15 +24,11 @@ namespace BitShelter.Service.Jobs
     public long RuleId { get; set; }
     public int RetryCount { get; set; }
 
-    public Task Execute(IJobExecutionContext context)
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
     {
-      // Quartz.NET seem to fire each Trigger once after scheduling them, regardless of their real fire time.
-      // This is an attempt to fix that issue.
-      if (context.PreviousFireTimeUtc == null)
-        return TaskConst.Completed;
-
       VssClient vss = null;
-      int maxRetryCount = -1;
+      int maxRetryCount = 0;
+      bool restartVss = false;
 
       try
       {
@@ -39,21 +41,26 @@ namespace BitShelter.Service.Jobs
           throw new InvalidOperationException(String.Format("Failed to retrieve SnapshotRule {0}", RuleId));
         }
 
-        Log.Debug("Executing SnapshotJob for {rule.Name}", rule.Name);
+        maxRetryCount = rule.MaxRetryCount;
+        restartVss = rule.RetryRestartVSSService;
+
+        Log.Debug("Executing SnapshotJob for {RuleName}", rule.Name);
 
         if (rule.Enabled == false) // Shouldn't happen expect in rare cases
-          return TaskConst.Completed;
+          return ValueTask.CompletedTask;
 
         vss = new VssClient(new VssHost());
         vss.Initialize((VssSnapshotContext)rule.VssContext, (VssBackupType)rule.VssBackupType);
 
-        var snapshotIds = vss.CreateSnapshot(rule.Volumes, null, rule.VssExcludeWriters, rule.VssIncludeWriters);
+        if (rule.PruningStrategy == PruningStrategy.Global)
+          MakeRoom(vss, rule);
+
+        List<Guid> snapshotIds = vss.CreateSnapshot(rule.Volumes, null, rule.VssExcludeWriters, rule.VssIncludeWriters).ToList();
 
         PruningMgr.Instance.CreateNewInstances(rule.Id, snapshotIds);
 
-        // TODO: Implement backups
-        if (false && rule.BackupEnabled && rule.BackupRules != null && rule.BackupRules.Count > 0)
-          ScheduleBackup(context.Scheduler);
+        if (rule.BackupEnabled && rule.BackupRules != null && rule.BackupRules.Count > 0)
+          ScheduleDueBackups(context.Scheduler, rule, snapshotIds);
 
         Log.Debug("Completed SnapshotJob for {RuleId}", RuleId);
       }
@@ -61,9 +68,9 @@ namespace BitShelter.Service.Jobs
       {
         Log.Error(ex, "Failed SnapshotJob for {RuleId}", RuleId);
 
-        Retry(ex, context.Scheduler, context.JobDetail, maxRetryCount);
+        Retry(ex, context.Scheduler, context.JobDetail, maxRetryCount, restartVss);
 
-        return TaskConst.Canceled;
+        return ValueTask.CompletedTask;
       }
       finally
       {
@@ -74,26 +81,34 @@ namespace BitShelter.Service.Jobs
         }
       }
 
-      return TaskConst.Completed;
+      return ValueTask.CompletedTask;
     }
 
-    protected void ScheduleBackup(IScheduler scheduler)
+    private void ScheduleDueBackups(IScheduler scheduler, SnapshotRule rule, IReadOnlyCollection<Guid> snapshotIds)
     {
-      Log.Debug("Scheduling BackupJob for {RuleId}", RuleId);
+      long snapshotNumber = BackupStateMgr.Instance.NextSnapshotNumber(rule.Id);
+      List<string> due = rule.BackupRules
+        .Where(b => BackupSchedule.IsDue(snapshotNumber, b.Offset, b.Every))
+        .Select(b => b.Name)
+        .ToList();
 
-      ITrigger backupTrigger = TriggerBuilder.Create()
-        .ForJob(VssScheduler.BackupJob)
-        .StartAt(DateTime.Now.AddSeconds(5))
-        .UsingJobData("RuleId", RuleId)
-        .Build();
+      if (due.Count == 0)
+        return;
 
-      scheduler.ScheduleJob(backupTrigger).Wait();
+      Log.Debug("Scheduling BackupJob for {RuleId}: {BackupNames}", RuleId, due);
+
+      ITrigger trigger = TriggerBuilder.Create().StartNow().Build();
+
+      scheduler.ScheduleJob(BackupJob.Create(rule.Id, snapshotIds, due), trigger).GetAwaiter().GetResult();
     }
 
-    protected void Retry(Exception ex, IScheduler scheduler, IJobDetail jobDetail, int maxRetryCount)
+    protected void Retry(Exception ex, IScheduler scheduler, IJobDetail jobDetail, int maxRetryCount, bool restartVss)
     {
       if (RetryCount < maxRetryCount)
       {
+        if (restartVss)
+          RestartVss();
+
         Log.Information("Retrying SnapshotJob for {RuleId} in 1 minute (attempt {RetryCount}/{MaxRetryCount})", RuleId, RetryCount, maxRetryCount);
 
         ITrigger trigger = TriggerBuilder.Create()
@@ -104,11 +119,39 @@ namespace BitShelter.Service.Jobs
           .UsingJobData("RetryCount", ++RetryCount)
           .Build();
 
-        scheduler.ScheduleJob(trigger).Wait();
+        scheduler.ScheduleJob(trigger).GetAwaiter().GetResult();
       }
 
       else
-        throw new JobExecutionException(ex, false);
+        throw new JobExecutionException(ex);
+    }
+
+    // The registry limit (MaxShadowCopies) applies to client-accessible snapshots. Other snapshot types have a fixed limit of 512 per volume.
+    private static void MakeRoom(VssClient vss, SnapshotRule rule)
+    {
+      int limit = rule.VssContext == VssSnapshotContextInternal.ClientAccessible ? VssUtils.GetSnapshotLimit() : 512;
+
+      try
+      {
+        PruningMgr.Instance.MakeRoomForRule(vss, rule, limit);
+      }
+      catch (Exception ex) when (ex is not OperationCanceledException)
+      {
+        Log.Warning(ex, "Could not make room for a new snapshot of rule {RuleName}", rule.Name);
+      }
+    }
+
+    private static void RestartVss()
+    {
+      try
+      {
+        Log.Information("Restarting the Volume Shadow Copy service before the retry");
+        VssServiceControl.Restart(TimeSpan.FromSeconds(60));
+      }
+      catch (Exception ex) when (ex is InvalidOperationException or System.ServiceProcess.TimeoutException or System.ComponentModel.Win32Exception)
+      {
+        Log.Warning(ex, "Could not restart the Volume Shadow Copy service");
+      }
     }
   }
 }

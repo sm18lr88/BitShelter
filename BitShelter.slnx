@@ -1,0 +1,36 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="BitShelter.Agent/BitShelter.Agent.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="BitShelter.Common/BitShelter.Common.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="BitShelter.Service/BitShelter.Service.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="BitShelter.Benchmark/BitShelter.Benchmark.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="BitShelter.Benchmark.Console/BitShelter.Benchmark.Console.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="BitShelter.Tests/BitShelter.Tests.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="THIRD-PARTY-NOTICES.txt" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="BitShelter.Setup/BitShelter.Setup.wixproj" />
+  </Folder>
+</Solution>

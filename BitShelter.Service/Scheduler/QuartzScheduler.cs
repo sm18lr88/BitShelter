@@ -1,13 +1,9 @@
 ﻿using Quartz;
-using Quartz.Impl;
-using System.Collections.Specialized;
 using System.Threading.Tasks;
 
 namespace BitShelter.Service.Scheduler
 {
-  // https://www.quartz-scheduler.net/documentation/quartz-3.x/quick-start.html
-  // https://www.quartz-scheduler.net/documentation/quartz-3.x/tutorial/index.html
-  // https://github.com/damianh/LibLog/wiki
+  // https://www.quartz-scheduler.net/documentation/quartz-4.x/tutorial/standalone-scheduler.html
   class QuartzScheduler
   {
     public IScheduler Scheduler { get; private set; }
@@ -25,15 +21,13 @@ namespace BitShelter.Service.Scheduler
 
     public async Task Start()
     {
-      // construct a scheduler factory
-      NameValueCollection props = new NameValueCollection
-      {
-        { "quartz.serializer.type", "binary" }
-      };
-      StdSchedulerFactory schedFact = new StdSchedulerFactory(props);
+      // In-memory job store: rules are persisted by ConfigMgr and triggers are rebuilt from them at startup.
+      Scheduler = await QuartzSchedulerBuilder
+        .Create(q => q
+          .ConfigureScheduler(o => o.InstanceName = Const.AppName)
+          .UseInMemoryStore())
+        .BuildScheduler();
 
-      // get a scheduler
-      Scheduler = await schedFact.GetScheduler();
       await Scheduler.Start();
     }
 

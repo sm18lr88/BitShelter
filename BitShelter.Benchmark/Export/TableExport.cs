@@ -1,17 +1,20 @@
 ﻿using BitShelter.Benchmark.Models;
 using BitShelter.Encryption;
-using NPOI.SS.UserModel;
-using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BitShelter.Benchmark.Export
 {
   public class TableExport
   {
+    private static readonly string[] Header =
+    {
+      "Archive", "Compression", "Encryption", "Cipher", "Compressed Size",
+      "Compression Ratio (%)", "Total Runtime", "Mean Runtime"
+    };
+
     protected IEnumerable<CEBenchResult> Results { get; }
     public int OriginalSize { get; }
     public int Iterations { get; }
@@ -23,55 +26,34 @@ namespace BitShelter.Benchmark.Export
       Iterations = iterations;
     }
 
-    public void ExportXls(string filepath)
+    public void ExportCsv(string filepath)
     {
-      IWorkbook workbook = new NPOI.HSSF.UserModel.HSSFWorkbook();
+      using (var writer = new StreamWriter(filepath))
+      {
+        writer.WriteLine(string.Join(",", Header));
 
-      Export(workbook, filepath);
-
-      workbook.Close();
+        foreach (CEBenchResult res in Results)
+          writer.WriteLine(string.Join(",", ToRow(res).Select(Quote)));
+      }
     }
 
-    private void Export(IWorkbook workbook, string filepath)
+    private IEnumerable<string> ToRow(CEBenchResult res)
     {
-      ISheet sheet = workbook.CreateSheet(
-        String.Format(
-          "Benchmark {0}",
-          DateTime.Now.ToShortDateString()
-        )
-      );
+      double ratio = res.CompressedSize == 0 ? 100d : (double)res.CompressedSize / OriginalSize * 100d;
 
-      int rowNum = 0;
+      yield return res.ArchiveType.ToString();
+      yield return res.CompressionType.ToString();
+      yield return res.Encryption.ToString();
+      yield return res.EncryptionAlgorithm.GetDisplayName();
+      yield return res.CompressedSize.ToString(CultureInfo.InvariantCulture);
+      yield return ratio.ToString("F2", CultureInfo.InvariantCulture);
+      yield return res.TotalRuntime.ToString(CultureInfo.InvariantCulture);
+      yield return (res.TotalRuntime / Iterations).ToString(CultureInfo.InvariantCulture);
+    }
 
-      // Create header
-      IRow headerRow = sheet.CreateRow(rowNum);
-      headerRow.CreateCell(0).SetCellValue("Archive");
-      headerRow.CreateCell(1).SetCellValue("Compression");
-      headerRow.CreateCell(2).SetCellValue("Protocol");
-      headerRow.CreateCell(3).SetCellValue("Algorithm");
-      headerRow.CreateCell(4).SetCellValue("Compressed Size");
-      headerRow.CreateCell(5).SetCellValue("Compression Ratio");
-      headerRow.CreateCell(6).SetCellValue("Total Runtime");
-      headerRow.CreateCell(7).SetCellValue("Mean Runtime");
-      headerRow.CreateCell(8).SetCellValue("Median Runtime");
-
-      foreach (var res in Results)
-      {
-        IRow row = sheet.CreateRow(++rowNum);
-
-        row.CreateCell(0).SetCellValue(res.ArchiveType.ToString());
-        row.CreateCell(1).SetCellValue(res.CompressionType.ToString());
-        row.CreateCell(2).SetCellValue(res.EncryptionProtocol.ToString());
-        row.CreateCell(3).SetCellValue(res.EncryptionAlgorithm.GetDisplayName());
-        row.CreateCell(4).SetCellValue(res.CompressedSize);
-        row.CreateCell(5).SetCellValue(String.Format("{0}%", res.CompressedSize == 0 ? 100 : (double)res.CompressedSize / (double)OriginalSize * 100d));
-        row.CreateCell(6).SetCellValue(res.TotalRuntime);
-        row.CreateCell(7).SetCellValue(res.TotalRuntime / Iterations);
-        row.CreateCell(8).SetCellValue(0);
-      }
-
-      using (Stream outStream = File.OpenWrite(filepath))
-        workbook.Write(outStream);
+    private static string Quote(string value)
+    {
+      return "\"" + value.Replace("\"", "\"\"") + "\"";
     }
   }
 }

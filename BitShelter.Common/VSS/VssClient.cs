@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Alphaleonis.Win32.Vss;
 using BitShelter.Utils;
 using System.IO;
@@ -16,7 +17,7 @@ namespace BitShelter.VSS
     #region Private Fields
 
     private List<VssWriterDescriptor> m_writerComponentsForRestore;
-    private static IVssImplementation s_implementation;
+    private static readonly Lazy<IVssFactory> s_vssFactory = new(() => new VssFactoryProvider(new VssAssemblyResolver()).GetVssFactory());
     private VssVolumeSnapshotAttributes m_context = (VssVolumeSnapshotAttributes)VssSnapshotContext.Backup;
     private IVssBackupComponents m_backupComponents;
     private bool m_duringRestore;
@@ -43,15 +44,11 @@ namespace BitShelter.VSS
 
     public IUIHost Host { get; private set; }
 
-    public static IVssImplementation Implementation
+    private static IVssFactory VssFactory
     {
       get
       {
-        if (s_implementation == null)
-        {
-          s_implementation = Alphaleonis.Win32.Vss.VssUtils.LoadImplementation();
-        }
-        return s_implementation;
+        return s_vssFactory.Value;
       }
     }
 
@@ -66,7 +63,7 @@ namespace BitShelter.VSS
 
     public void Initialize(VssSnapshotContext context, VssBackupType backupType = VssBackupType.Full, string xmlDoc = null, bool duringRestore = false)
     {
-      m_backupComponents = Implementation.CreateVssBackupComponents();
+      m_backupComponents = VssFactory.CreateVssBackupComponents();
       m_duringRestore = duringRestore;
 
       if (m_duringRestore)
@@ -79,7 +76,7 @@ namespace BitShelter.VSS
         Host.WriteVerbose("- Calling IVssBackupComponents.InitializeForBackup() {0} xml doc.", xmlDoc == null ? "without" : "with");
         m_backupComponents.InitializeForBackup(xmlDoc);
 
-        if (OperatingSystemInfo.IsAtLeast(OSVersionName.WindowsServer2003) && context != VssSnapshotContext.Backup)
+        if (context != VssSnapshotContext.Backup)
         {
           Host.WriteDebug("- Setting the VSS context to: {0}", context);
           m_backupComponents.SetContext(context);
@@ -640,11 +637,8 @@ namespace BitShelter.VSS
       // Gathers writer metadata
       // WARNING: this call can be performed only once per IVssBackupComponents instance!
 
-      using (IVssAsyncResult result = m_backupComponents.BeginGatherWriterMetadata(null, null))
-      {
-        Host.WriteDebug("Waiting for asynchronous operation to complete...");
-        result.AsyncWaitHandle.WaitOne();
-      }
+      Host.WriteDebug("Waiting for asynchronous operation to complete...");
+      m_backupComponents.GatherWriterMetadataAsync(CancellationToken.None).GetAwaiter().GetResult();
 
       Host.WriteDebug("- Initialize writer metadata...");
       InitializeWriterMetadata();
@@ -654,11 +648,8 @@ namespace BitShelter.VSS
     {
       Host.WriteDebug("Gathering writer metadata...");
 
-      using (IVssAsyncResult result = m_backupComponents.BeginGatherWriterMetadata(null, null))
-      {
-        Host.WriteDebug("Waiting for asynchronous operation to complete...");
-        result.AsyncWaitHandle.WaitOne();
-      }
+      Host.WriteDebug("Waiting for asynchronous operation to complete...");
+      m_backupComponents.GatherWriterMetadataAsync(CancellationToken.None).GetAwaiter().GetResult();
 
       int c = 1;
       foreach (IVssExamineWriterMetadata writerMetadata in m_backupComponents.WriterMetadata)
@@ -1071,16 +1062,22 @@ namespace BitShelter.VSS
          snapshot.ProviderId,
          snapshot.SnapshotAttributes);
 
-      if (s_implementation.ShouldBlockRevert(snapshot.OriginalVolumeName))
+      try
       {
-        Host.WriteWarning("Revert is disabled on the volume {0} because of writers.", snapshot.OriginalVolumeName);
+        m_backupComponents.RevertToSnapshot(snapshot.SnapshotId, true);
+      }
+      catch (VssCannotRevertDiskIdException ex)
+      {
+        Host.WriteWarning(ex.Message);
+        return;
+      }
+      catch (VssRevertInProgressException ex)
+      {
+        Host.WriteWarning(ex.Message);
         return;
       }
 
-      m_backupComponents.RevertToSnapshot(snapshot.SnapshotId, true);
-
-      IVssAsyncResult ar = m_backupComponents.BeginQueryRevertStatus(snapshot.OriginalVolumeName, null, null);
-      m_backupComponents.EndQueryRevertStatus(ar);
+      m_backupComponents.QueryRevertStatusAsync(snapshot.OriginalVolumeName, CancellationToken.None).GetAwaiter().GetResult();
 
       Host.WriteDebug("The shadow copy has been successfully reverted.");
     }

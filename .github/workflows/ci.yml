@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore BitShelter.slnx
+
+      - name: Build
+        run: dotnet build BitShelter.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test --solution BitShelter.slnx -c Release --no-build --coverlet --coverlet-output-format cobertura --results-directory TestResults
+
+      - name: Build installer
+        run: dotnet build BitShelter.Setup -c Release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BitShelter-msi
+          path: BitShelter.Setup/bin/x64/Release/*.msi
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: TestResults/coverage.cobertura.*.xml
+          if-no-files-found: warn

@@ -41,6 +41,14 @@ namespace BitShelter.Models
     public CompressionType CompressionType { get; set; }
     [DataMember]
     public EncryptionAlgorithm EncryptionType { get; set; }
+    [DataMember]
+    public BackupEncryption Encryption { get; set; }
+    // ASCII-armored OpenPGP public key. It is not secret.
+    [DataMember]
+    public string PgpPublicKey { get; set; }
+    // Passphrase protected with DPAPI (local machine scope). Only processes on this computer can read it.
+    [DataMember]
+    public string ProtectedPassphrase { get; set; }
 
     [DataMember]
     public bool NotifyError { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace BitShelter.Agent.Forms
+namespace BitShelter.Agent.Forms
 {
   partial class SnapshotLimitForm
   {
@@ -30,7 +30,7 @@
     {
       System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SnapshotLimitForm));
       this.lblLimit = new System.Windows.Forms.Label();
-      this.nbLimit = new Syncfusion.Windows.Forms.Tools.NumericUpDownExt();
+      this.nbLimit = new System.Windows.Forms.NumericUpDown();
       this.lblLimitDesc = new System.Windows.Forms.Label();
       this.lblMicrosoftRef = new System.Windows.Forms.LinkLabel();
       this.button1 = new System.Windows.Forms.Button();
@@ -48,14 +48,12 @@
       // 
       // nbLimit
       // 
-      this.nbLimit.BeforeTouchSize = new System.Drawing.Size(64, 20);
       this.nbLimit.Location = new System.Drawing.Point(113, 9);
       this.nbLimit.Maximum = new decimal(new int[] {
             512,
             0,
             0,
             0});
-      this.nbLimit.MetroColor = System.Drawing.Color.FromArgb(((int)(((byte)(209)))), ((int)(((byte)(211)))), ((int)(((byte)(212)))));
       this.nbLimit.Minimum = new decimal(new int[] {
             64,
             0,
@@ -64,13 +62,11 @@
       this.nbLimit.Name = "nbLimit";
       this.nbLimit.Size = new System.Drawing.Size(64, 20);
       this.nbLimit.TabIndex = 4;
-      this.nbLimit.ThemesEnabled = true;
       this.nbLimit.Value = new decimal(new int[] {
             64,
             0,
             0,
             0});
-      this.nbLimit.VisualStyle = Syncfusion.Windows.Forms.VisualStyle.Metro;
       // 
       // lblLimitDesc
       // 
@@ -116,7 +112,7 @@
       this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
       this.Name = "SnapshotLimitForm";
       this.ShowIcon = false;
-      this.ShowMaximizeBox = false;
+      this.MaximizeBox = false;
       this.Text = "Max. Snapshot Limit";
       ((System.ComponentModel.ISupportInitialize)(this.nbLimit)).EndInit();
       this.ResumeLayout(false);
@@ -127,7 +123,7 @@
     #endregion
 
     private System.Windows.Forms.Label lblLimit;
-    private Syncfusion.Windows.Forms.Tools.NumericUpDownExt nbLimit;
+    private System.Windows.Forms.NumericUpDown nbLimit;
     private System.Windows.Forms.Label lblLimitDesc;
     private System.Windows.Forms.LinkLabel lblMicrosoftRef;
     private System.Windows.Forms.Button button1;

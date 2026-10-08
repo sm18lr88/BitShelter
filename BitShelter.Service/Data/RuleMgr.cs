@@ -1,5 +1,6 @@
 ﻿using Alphaleonis.Win32.Vss;
 using BitShelter.Models;
+using BitShelter.Service.Backup;
 using BitShelter.Service.Config;
 using BitShelter.Service.Scheduler;
 using BitShelter.Utils;
@@ -64,6 +65,8 @@ namespace BitShelter.Service.Data
       VssScheduler.CreateAllTriggers(Rules);
 
       SaveRules();
+
+      BackupStateMgr.Instance.ForgetRule(rule.Id);
 
       return ret;
     }

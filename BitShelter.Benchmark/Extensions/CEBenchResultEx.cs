@@ -15,7 +15,7 @@ namespace BitShelter.Benchmark.Extensions
       Console.WriteLine(
         "{0}.{1} ({2} - {3})\n------------------------------------------------\nTotal: {4}ms\nMean: {5}ms\nCompressed size: {6}\n\n",
         res.ArchiveType.ToString(), res.CompressionType.ToString(),
-        res.EncryptionProtocol.ToString(), res.EncryptionAlgorithm.GetDisplayName(),
+        res.Encryption.ToString(), res.EncryptionAlgorithm.GetDisplayName(),
         res.TotalRuntime, res.TotalRuntime / iterations,
         res.CompressedSize);
     }

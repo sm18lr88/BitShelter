@@ -1,4 +1,4 @@
-﻿using Alphaleonis.Win32.Vss;
+using Alphaleonis.Win32.Vss;
 using BitShelter.Data;
 using BitShelter.Service.Data;
 using BitShelter.Utils;
@@ -9,13 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BitShelter.Service.Jobs
 {
   public class PruneJob : IJob
   {
-    public Task Execute(IJobExecutionContext context)
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
     {
       VssClient vss = null;
 
@@ -30,7 +31,7 @@ namespace BitShelter.Service.Jobs
       {
         Log.Error(ex, "Failed PruneJob");
 
-        throw new JobExecutionException(ex, false);
+        throw new JobExecutionException(ex);
       }
       finally
       {
@@ -41,7 +42,7 @@ namespace BitShelter.Service.Jobs
         }
       }
 
-      return TaskConst.Completed;
+      return ValueTask.CompletedTask;
     }
   }
 }

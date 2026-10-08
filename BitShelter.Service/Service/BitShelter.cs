@@ -15,17 +15,8 @@ namespace BitShelter.Service
       InitializeComponent();
     }
 
-    protected void DebugMode()
-    {
-      Debugger.Launch();
-    }
-
     protected override void OnStart(string[] args)
     {
-#if DEBUG
-      DebugMode();
-#endif
-
       try
       {
         AppInit.Initialize(this);
@@ -35,9 +26,7 @@ namespace BitShelter.Service
       catch (Exception ex)
       {
         Log.Error(ex, "Failed to start scheduling service");
-
-        // TODO: Handle error
-        throw ex;
+        throw;
       }
     }
 
@@ -45,16 +34,14 @@ namespace BitShelter.Service
     {
       try
       {
-        AppInit.Shutdown(this);
-
         Log.Information("BitShelter Service stopping");
+
+        AppInit.Shutdown(this);
       }
       catch (Exception ex)
       {
         Log.Error(ex, "Failed to stop scheduling service");
-
-        // TODO: Handle error
-        throw ex;
+        throw;
       }
     }
   }

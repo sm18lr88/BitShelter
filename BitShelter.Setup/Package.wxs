@@ -1,0 +1,90 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <!-- UpgradeCode is unchanged from the 2018 WiX 3 installer so a new MSI replaces old installs. -->
+  <Package Name="BitShelter"
+           Manufacturer="BitShelter contributors"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="18437B03-A7F4-4DE0-9FC1-459BEC69DA5D"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <SummaryInformation Description="BitShelter: scheduled Volume Shadow Copy snapshots" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of BitShelter is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Both apps are framework-dependent: require the .NET 10 Desktop Runtime (x64), any 10.x patch. -->
+    <netfx:DotNetCompatibilityCheck Property="DOTNETDESKTOP10" RuntimeType="desktop" Platform="x64" Version="10.0.0" RollForward="latestPatch" />
+    <Launch Condition="Installed OR DOTNETDESKTOP10 = &quot;0&quot;"
+            Message="BitShelter needs the .NET 10 Desktop Runtime (x64). Install it from https://dotnet.microsoft.com/download/dotnet/10.0 and run this installer again." />
+
+    <Icon Id="BitShelter.ico" SourceFile="$(var.AgentProjectDir)BitShelter.ico" />
+    <Property Id="ARPPRODUCTICON" Value="BitShelter.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/sm18lr88/BitShelter" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/sm18lr88/BitShelter/issues" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="Assets\license.rtf" />
+    <ui:WixUI Id="WixUI_Minimal" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="BitShelter" />
+    </StandardDirectory>
+
+    <!-- An upgrade or uninstall replaces the Agent binaries, so stop the running tray Agent first. -->
+    <util:CloseApplication Id="CloseAgent" Target="BitShelter.Agent.exe" CloseMessage="yes" RebootPrompt="no" TerminateProcess="0" />
+
+    <Feature Id="Main" Title="BitShelter" Level="1">
+      <ComponentGroupRef Id="Executables" />
+      <ComponentGroupRef Id="PayloadComponents" />
+    </Feature>
+
+    <!-- The Agent's "Run at startup" menu creates a logon task; remove it on uninstall (not on upgrade). -->
+    <SetProperty Id="RemoveAgentStartupTask"
+                 Value="&quot;[System64Folder]schtasks.exe&quot; /Delete /F /TN BitShelter"
+                 Before="RemoveAgentStartupTask"
+                 Sequence="execute"
+                 Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    <CustomAction Id="RemoveAgentStartupTask" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="RemoveAgentStartupTask" Before="RemoveFiles" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="Executables" Directory="INSTALLFOLDER">
+      <Component Id="ServiceExe">
+        <File Id="ServiceExe" Source="$(var.PayloadDir)BitShelter.Service.exe" KeyPath="yes" />
+        <ServiceInstall Name="BitShelter"
+                        DisplayName="BitShelter"
+                        Description="Creates and prunes Volume Shadow Copy snapshots on the schedules defined in the BitShelter Agent."
+                        Type="ownProcess"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Vital="yes">
+          <util:ServiceConfig FirstFailureActionType="restart"
+                              SecondFailureActionType="restart"
+                              ThirdFailureActionType="restart"
+                              RestartServiceDelayInSeconds="60"
+                              ResetPeriodInDays="1" />
+        </ServiceInstall>
+        <ServiceControl Id="BitShelterService" Name="BitShelter" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+      </Component>
+
+      <Component Id="AgentExe">
+        <File Id="AgentExe" Source="$(var.PayloadDir)BitShelter.Agent.exe" KeyPath="yes">
+          <Shortcut Id="AgentStartMenuShortcut"
+                    Directory="ProgramMenuFolder"
+                    Name="BitShelter Agent"
+                    Description="Configure BitShelter snapshot schedules"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Advertise="yes"
+                    Icon="BitShelter.ico" />
+        </File>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

@@ -51,7 +51,7 @@ namespace BitShelter.Data
       // Modify here to handle several calendar if necessary in the future
       // Beware of calling GetExcludingDayRange if no exclusion range enabled
       rule.GetExcludingDayRange(out DateTime from, out DateTime to);
-      return new DailyCalendar(from, to);
+      return new DailyCalendar(TimeOnly.FromDateTime(from), TimeOnly.FromDateTime(to));
     }
 
     public static string GetCalendarName(this SnapshotRule rule)
@@ -61,9 +61,11 @@ namespace BitShelter.Data
 
     public static ITrigger GetTrigger(this SnapshotRule rule)
     {
-      TriggerBuilder builder = TriggerBuilder.Create()
+      // Triggers are rebuilt with a past start time whenever rules change or the service starts.
+      // DoNothing stops Quartz from treating that as a misfire and firing once immediately.
+      var builder = TriggerBuilder.Create()
         .WithIdentity(rule.ToString(), "SnapshotJob")
-        .WithCronSchedule(rule.GeneratedCron)
+        .WithCronSchedule(rule.GeneratedCron, cron => cron.WithMisfireInstruction(CronTriggerMisfireInstruction.DoNothing))
         .StartAt(rule.PeriodStart)
         .UsingJobData("RuleId", rule.Id)
         .WithDescription(rule.ToString());
@@ -72,7 +74,7 @@ namespace BitShelter.Data
         builder = builder.EndAt(rule.PeriodEnd);
 
       if (rule.HasCalendar())
-        builder = builder.ModifiedByCalendar(rule.GetCalendarName());
+        builder = builder.WithCalendarName(rule.GetCalendarName());
 
       return builder.Build();
     }
@@ -129,7 +131,7 @@ namespace BitShelter.Data
         }
         else
           break;
-      } while (cancel == null || cancel.IsCancellationRequested == false);
+      } while (!cancel.IsCancellationRequested);
 
       return count;
     }

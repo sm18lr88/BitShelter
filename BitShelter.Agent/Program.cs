@@ -1,23 +1,14 @@
-﻿using BitShelter.Agent.Forms;
-using BitShelter.Agent.SingleApp;
-using BitShelter.Utils;
+﻿using BitShelter.Agent.SingleApp;
 using Serilog;
-using Serilog.Events;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace BitShelter.Agent
 {
   static class Program
   {
-    /// <summary>
-    /// The main entry point for the application.
-    /// </summary>
     [STAThread]
-    static void Main(string[] args)
+    static void Main()
     {
       if (!SingleInstance.Start())
         return;
@@ -30,11 +21,11 @@ namespace BitShelter.Agent
 
         Log.Information("BitShelter Agent starting");
 
+        Application.SetHighDpiMode(HighDpiMode.SystemAware);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
-        var applicationContext = new CustomApplicationContext();
-        Application.Run(applicationContext);
+        Application.Run(new CustomApplicationContext());
 
         Log.Information("BitShelter Agent stopping");
 
@@ -43,11 +34,12 @@ namespace BitShelter.Agent
       catch (Exception ex)
       {
         Log.Fatal(ex, "Unrecoverable exception");
-        MessageBox.Show(ex.Message, "Program Terminated Unexpectedly",
-            MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show(ex.Message, "BitShelter Agent terminated unexpectedly", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
-
-      SingleInstance.Stop();
+      finally
+      {
+        SingleInstance.Stop();
+      }
     }
   }
 }

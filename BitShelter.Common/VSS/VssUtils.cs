@@ -43,7 +43,7 @@ namespace BitShelter.VSS
 
     private static RegistryKey EnsureSubKeyExists(RegistryKey reg, string path, bool forWrite = false)
     {
-      RegistryKey subKey = reg.OpenSubKey(MaxShadowCountKeyPath, forWrite);
+      RegistryKey subKey = reg.OpenSubKey(path, forWrite);
 
       if (subKey != null)
         return subKey;

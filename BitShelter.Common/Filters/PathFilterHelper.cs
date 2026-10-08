@@ -79,7 +79,7 @@ namespace BitShelter.IO
       }
 
       foreach (DirectoryInfo childDir in rootDir.EnumerateDirectories()
-        .Where(d => d.ShouldInclude(filterIncludes, filterExcludes)))
+        .Where(d => !filterExcludes.Any(f => f.Apply(d.FullName))))
         TraverseDirectoryWithFilter(childDir, filterIncludes, filterExcludes, callback, files);
     }
   }

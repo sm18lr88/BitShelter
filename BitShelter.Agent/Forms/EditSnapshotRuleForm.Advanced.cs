@@ -16,9 +16,11 @@ namespace BitShelter.Agent.Forms
     {
       cbSnapContext.FillWithEnum(VssSnapshotContextInternal.ClientAccessible);
       cbSnapType.FillWithEnum(VssBackupTypeInternal.Incremental);
+      cbPruningStrategy.FormattingEnabled = true;
       cbPruningStrategy.FillWithEnum(PruningStrategy.Global);
-
-      cbSnapFailRestartVSS.Enabled = cbPruningStrategy.Enabled = false; // FIXME
+      cbPruningStrategy.Format += (_, e) => e.Value = (PruningStrategy)e.ListItem == PruningStrategy.Global
+        ? "Global: also keep room under the volume limit"
+        : "Local: by lifetime only";
     }
 
     public void InitEditAdvanced(SnapshotRule rule)
@@ -29,7 +31,7 @@ namespace BitShelter.Agent.Forms
       tbSnapExclWriters.Text = String.Join(",", rule.VssExcludeWriters);
       nbSnapFailRetryCount.Value = rule.MaxRetryCount;
       cbSnapFailRestartVSS.Checked = rule.RetryRestartVSSService;
-      //cbPruningStrategy.SelectedIndex = cbPruningStrategy.Items.IndexOf(rule.PruningStrategy);
+      cbPruningStrategy.SelectedIndex = cbPruningStrategy.Items.IndexOf(rule.PruningStrategy);
     }
 
 
@@ -45,7 +47,7 @@ namespace BitShelter.Agent.Forms
       rule.VssExcludeWriters = new List<string>(tbSnapExclWriters.Text.Split(','));
       rule.MaxRetryCount = (int)nbSnapFailRetryCount.Value;
       rule.RetryRestartVSSService = cbSnapFailRestartVSS.Checked;
-      //rule.PruningStrategy = (PruningStrategy)cbPruningStrategy.SelectedItem;
+      rule.PruningStrategy = (PruningStrategy)cbPruningStrategy.SelectedItem;
     }
 
 

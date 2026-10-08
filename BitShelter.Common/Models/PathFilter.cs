@@ -23,12 +23,17 @@ namespace BitShelter.Models
       if (obj == null || !(obj is PathFilter))
         return false;
 
-      return Pattern.Equals(((PathFilter)obj).Pattern);
+      var other = (PathFilter)obj;
+
+      if (Pattern == null)
+        return other.Pattern == null;
+
+      return Pattern.Equals(other.Pattern);
     }
 
     public override int GetHashCode()
     {
-      return Pattern.GetHashCode();
+      return Pattern?.GetHashCode() ?? 0;
     }
   }
 }

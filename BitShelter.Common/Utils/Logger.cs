@@ -26,15 +26,15 @@ namespace BitShelter.Utils
       Log.Logger = new LoggerConfiguration()
         .MinimumLevel.ControlledBy(LevelSwitch)
         .Enrich.WithExceptionDetails()
-        .Enrich.WithDemystifiedStackTraces()
         .WriteTo.Debug(outputTemplate: OutputFormat)
         .WriteTo.EventLog(
           Const.AppName,
           restrictedToMinimumLevel: LogEventLevel.Information,
           manageEventSource: true)
         .WriteTo.Async(a =>
-          a.RollingFile(
+          a.File(
             GetLogFilePath(),
+            rollingInterval: RollingInterval.Day,
             fileSizeLimitBytes: 5242880, // Math.Min(ConfigMgr.AppConfig.LogMaxSize, 26214400),
             retainedFileCountLimit: 7,
             shared: true,
@@ -47,7 +47,7 @@ namespace BitShelter.Utils
     {
       string appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
 
-      return Path.Combine(appData, Const.AppName, "log-{Date}.txt");
+      return Path.Combine(appData, Const.AppName, "log-.txt");
     }
 
     public void SetMinimumLevel(LogEventLevel level)

@@ -1,30 +1,17 @@
-﻿using BitShelter.Agent;
+using BitShelter.Agent;
 using BitShelter.Agent.Forms;
-using BitShelter.Agent.WCF;
+using BitShelter.Agent.Ipc;
 using BitShelter.Models;
-using BitShelter.WCF;
 using Serilog;
-using Syncfusion.Windows.Forms;
 using System;
-using System.ComponentModel;
-using System.ServiceModel;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace BitShelter
 {
-  //[CallbackBehavior(UseSynchronizationContext = false)]
-  public partial class SettingsForm : MetroForm, ISnapshotServiceCallback
+  public partial class SettingsForm : Form
   {
-    protected const int RetryDelay = 5; // * 1000
-    protected const string RetryText = "Connection to the service failed.\nRetrying in {0}...";
-
     protected static SettingsForm _instance = null;
 
-    protected SynchronizationContext SyncContext { get; set; }
-    protected int RetryCount { get; private set; }
-    protected SnapshotClient SnapshotClient { get; private set; }
 
 
     public static SettingsForm DisplayInstance()
@@ -60,8 +47,7 @@ namespace BitShelter
     protected SettingsForm()
     {
       InitializeComponent();
-
-      SyncContext = SynchronizationContext.Current;
+      Icon = BitShelter.Agent.AppIcon.Load();
 
       SetupSnapshotDataGrid();
       ConnectSnapshotClient();
@@ -70,6 +56,7 @@ namespace BitShelter
     private void SetupSnapshotDataGrid()
     {
       dgSnapshotRules.AutoGenerateColumns = false;
+      dgSnapshotRules.BackgroundColor = System.Drawing.SystemColors.Window;
       dgSnapshotRules.CellContentClick += DgSnapshotRules_CellContentClick;
 
       SetupSnapshotDataGridColumns();
@@ -77,12 +64,12 @@ namespace BitShelter
 
     private void SetupSnapshotDataGridColumns()
     {
-      dgSnapshotRules.Columns.Add(CreateCheckboxColumn("Enabled", "E?", DataGridViewAutoSizeColumnMode.None, 30));
+      dgSnapshotRules.Columns.Add(CreateCheckboxColumn("Enabled", "On", DataGridViewAutoSizeColumnMode.AllCells));
       dgSnapshotRules.Columns.Add(CreateTextColumn("Name", "Name", DataGridViewAutoSizeColumnMode.AllCells));
       dgSnapshotRules.Columns.Add(CreateTextColumn("VolumesAsString", "Volumes", DataGridViewAutoSizeColumnMode.AllCells));
       dgSnapshotRules.Columns.Add(CreateTextColumn("ScheduleDescription", "Schedule", DataGridViewAutoSizeColumnMode.Fill));
-      dgSnapshotRules.Columns.Add(CreateButtonColumn("Edit", "Edit", DataGridViewAutoSizeColumnMode.None, 44));
-      dgSnapshotRules.Columns.Add(CreateButtonColumn("Delete", "Delete", DataGridViewAutoSizeColumnMode.None, 56));
+      dgSnapshotRules.Columns.Add(CreateButtonColumn("Edit", "Edit", DataGridViewAutoSizeColumnMode.AllCells));
+      dgSnapshotRules.Columns.Add(CreateButtonColumn("Delete", "Delete", DataGridViewAutoSizeColumnMode.AllCells));
     }
 
     private bool RefreshDataGrid()
@@ -220,142 +207,6 @@ namespace BitShelter
       }
 
       return base.ProcessCmdKey(ref msg, keyData);
-    }
-
-    public void Dummy() { }
-
-    private void CleanupSnapshotClient()
-    {
-      if (SnapshotClient != null)
-      {
-        try
-        {
-          SnapshotClient.InnerChannel.Opened -= InnerChannel_Opened;
-          SnapshotClient.InnerChannel.Faulted -= SnapshotClient_Faulted;
-          SnapshotClient.Abort();
-          SnapshotClient = null;
-        }
-        catch (Exception)
-        {
-        }
-      }
-    }
-
-    private void SetupSnapshotClient()
-    {
-      CleanupSnapshotClient();
-
-      SnapshotClient = new SnapshotClient(new InstanceContext(this));
-      
-      SnapshotClient.InnerChannel.Opened += InnerChannel_Opened;
-      SnapshotClient.InnerChannel.Faulted += SnapshotClient_Faulted;
-    }
-
-    private void InnerChannel_Opened(object sender, EventArgs e)
-    {
-      SendOrPostCallback updateUI = new SendOrPostCallback(arg =>
-      {
-        StopConnectionRetry();
-
-        RefreshDataGrid();
-      });
-
-      SyncContext.Send(updateUI, null);
-    }
-
-    private void SnapshotClient_Faulted(object sender, EventArgs e)
-    {
-      if (!retryConnTimer.Enabled)
-      {
-        RetryCount = 0;
-
-        SendOrPostCallback updateUI = new SendOrPostCallback(arg =>
-        {
-          StartConnectionRetry();
-        });
-
-        SyncContext.Send(updateUI, null);
-      }
-    }
-
-    private void ConnectSnapshotClient()
-    {
-      SetupSnapshotClient();
-
-      try
-      {
-        SnapshotClient.Open();
-      }
-      catch (Exception)
-      {
-      }
-    }
-
-
-
-    //
-    // Connection retry
-
-    private void StartConnectionRetry()
-    {
-      plSvcConnection.Visible = true;
-      plSvcConnection.Enabled = true;
-      plSvcConnection.BringToFront();
-
-      //wb.Url = null;
-      DisplayNewTrivia();
-
-      retryConnTimer.Tag = RetryDelay;
-      retryConnTimer.Start();
-    }
-
-    private void StopConnectionRetry()
-    {
-      plSvcConnection.Visible = false;
-      plSvcConnection.Enabled = false;
-
-      retryConnTimer.Stop();
-    }
-
-    private void DisplayNewTrivia()
-    {
-      if (wb.Url != null && wb.Url.ToString() != "about:blank")
-        return;
-
-      int idx = new Random().Next(AgentConst.Trivia.Length);
-
-      wb.DocumentText = String.Format(@"
-<html><body>
-<table width=""100%""><tr><td><h3>Did you know ?</h3></td><td><p style=""float:right; font-size: 10px;"">(will refresh every 60sec, unless you browse)</p></td></tr></table>
-<span>{0}</span>
-<br/><br/>
-<span><b>Source</b>: <a href=""https://en.wikipedia.org/wiki/List_of_common_misconceptions"">https://en.wikipedia.org/wiki/List_of_common_misconceptions</a></span>
-</body></html>
-", AgentConst.Trivia[idx]);
-    }
-
-    private void retryConnTimer_Tick(object sender, EventArgs e)
-    {
-      int retryCountdown = (int)retryConnTimer.Tag;
-      retryConnTimer.Tag = retryCountdown = (retryCountdown <= 1) ? RetryDelay : retryCountdown - 1;
-
-      lblConnWait.Text = String.Format(RetryText, retryCountdown);
-
-      if (retryCountdown == RetryDelay)
-      {
-        RetryCount++;
-
-        if (RetryCount % 12 == 0)
-          DisplayNewTrivia();
-
-        ConnectSnapshotClient();
-
-        //if (RefreshDataGrid())
-        //{
-        //  HideConnectionPanel();
-        //  return;
-        //}
-      }
     }
   }
 }

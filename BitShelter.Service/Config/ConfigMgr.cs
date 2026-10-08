@@ -1,5 +1,6 @@
 ﻿using BitShelter.Data;
 using BitShelter.Models;
+using BitShelter.Service.Backup;
 using BitShelter.Service.Data;
 using Newtonsoft.Json;
 using Serilog;
@@ -28,6 +29,8 @@ namespace BitShelter.Service.Config
     {
       //_appConfig = ConfigLoader.LoadAppConfig().Result ?? new AppConfig();
 
+      BackupStateMgr.Instance.Load(Const.GetAppDataFolderPath());
+
       PruningMgr.Instance.LoadInstances(ConfigLoader.LoadSnapshotInstances().Result ?? new List<SnapshotInstance>());
 
       Tuple<IList<SnapshotRule>, string> ret = ConfigLoader.LoadLatestRules().Result;
@@ -40,6 +43,15 @@ namespace BitShelter.Service.Config
       string fileName = String.Format("rule_{0}.json", DateTime.Now.Ticks);
 
       ConfigLoader.SaveToFile(rules, fileName);
+
+      try
+      {
+        ConfigLoader.DeleteOldRulesFiles(Const.GetAppDataFolderPath(), ConfigLoader.RuleFileHistoryCount);
+      }
+      catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+      {
+        Log.Warning(ex, "Failed to delete old rule files");
+      }
     }
   }
 }

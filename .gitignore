@@ -288,3 +288,7 @@ __pycache__/
 *.xsd.cs
 /.project
 Deploy
+
+# Local coding-agent state
+.claude/
+.omo/
