@@ -55,7 +55,7 @@ Coverage is low in this legacy codebase. A passing test run does not mean that a
 
 A normal test run cannot safely validate these areas:
 
-- **VSS snapshot creation, deletion, and revert**. These change the shadow copy state and need administrator rights.
+- **VSS snapshot creation and deletion**, with and without VSS writers. These change the shadow copy state and need administrator rights.
 - **Windows Service installation and lifecycle** (the MSI, or `sc.exe create/start/stop/delete`)
 - **WinForms UI behavior** (requires a desktop session)
 

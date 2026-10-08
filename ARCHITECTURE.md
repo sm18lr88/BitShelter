@@ -1,7 +1,7 @@
 ## BitShelter architecture
 
 This document describes the parts of BitShelter, how they communicate, and which part owns which data.
-For build, install, and test commands, see [README.md](README.md) and [TESTING.md](TESTING.md).
+For build, install, and test commands, see the [user guide](docs/user-guide.md#install) and [TESTING.md](TESTING.md).
 
 ### Components
 
@@ -93,6 +93,17 @@ The service uses Quartz 4 with an in-memory job store. Quartz keeps no data on d
 - Backups use only standard OpenPGP, so GnuPG can decrypt them. Do not add a custom encryption format. The 2018 AES and PBE code was removed in 0.2.0 because its output could not be decrypted with any tool. The `EncryptionAlgorithm` enum keeps its old values only so that old rule files still load.
 - A public key is not secret. The rule stores it as ASCII-armored text.
 - The Agent protects a passphrase with DPAPI (local machine scope) before it sends the rule (`PassphraseProtector`). The service unprotects the passphrase only when it writes the backup.
+
+### VSS access
+
+`VssClient` (`BitShelter.Common\VSS`) is a VSS requester. It calls `vssapi.dll` through BitShelter's own COM interop (`VSS\Interop`, .NET source-generated COM), declared from the Windows SDK headers `vsbackup.h` and `vss.h`. There is no third-party VSS library.
+
+- Snapshots use one of two contexts. Both are persistent and client-accessible, so File Explorer shows them under Previous Versions:
+  - `ClientAccessible` (default): no VSS writers.
+  - `ClientAccessibleWriters` (the rule option **Ask applications to save their data first**): writers flush their data first, as for System Restore points. The requester uses non-component mode and the `VSS_BT_COPY` backup type, so it does not change the backup history of applications. A failed writer is logged as a warning and does not stop the snapshot.
+- Each operation uses a new VSS session (`IVssBackupComponents`). In writer mode, a query on the session that then creates the snapshot makes `AddToSnapshotSet` fail. For this reason, `SnapshotJob` makes room in its own session before it creates the snapshot.
+- The service sets the process COM security for a VSS requester at startup (`VssClient.InitializeProcessSecurity`), as documented by Microsoft.
+- Rules from earlier versions can contain other VSS contexts. `SnapshotRule.SnapshotContext` maps a context with writers to `ClientAccessibleWriters` and any other context to `ClientAccessible`.
 
 ### Known gaps
 
