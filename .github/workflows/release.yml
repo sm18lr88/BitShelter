@@ -88,6 +88,6 @@ jobs:
           $section = [regex]::Match($changelog, "(?ms)^### \[$([regex]::Escape($env:VERSION))\][^\n]*\n(.*?)(?=^### \[|\z)")
           if (-not $section.Success) { throw "CHANGELOG.md has no section for $env:VERSION." }
           $notes = $section.Groups[1].Value.Trim()
-          if (-not $signed) { $notes += "`n`nThis MSI is not signed yet. See the code signing policy in the README." }
+          if (-not $signed) { $notes += "`n`nThis MSI is not code-signed, so Windows SmartScreen can show a warning." }
           Set-Content -Path release-notes.md -Value $notes
           gh release create "${{ github.ref_name }}" $msi.FullName --title "BitShelter $env:VERSION" --notes-file release-notes.md

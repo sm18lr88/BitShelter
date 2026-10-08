@@ -1,6 +1,6 @@
 ## Releasing BitShelter
 
-This document describes how to make a release and how to set up code signing with [SignPath Foundation](https://signpath.org/). The README has the public [code signing policy](README.md#code-signing-policy).
+This document describes how to make a release, and how to set up code signing with [SignPath Foundation](https://signpath.org/) later. Releases are not code-signed at present (see [Code signing](README.md#code-signing) in the README).
 
 ### Make a release
 
@@ -18,9 +18,9 @@ This document describes how to make a release and how to set up code signing wit
 
 You can also start the workflow by hand (**Actions** > **Release** > **Run workflow**). A run that a tag did not start builds and signs, but creates no release.
 
-### Set up code signing
+### Set up code signing (optional, not set up)
 
-SignPath Foundation signs only projects that already have a release. Make the first release unsigned, then apply.
+SignPath Foundation signs only projects that already have a release. If you set up signing, also replace the **Code signing** section of the README with the code signing policy that SignPath Foundation requires (who commits, reviews, and approves).
 
 1. Make sure that every member of the project uses multi-factor authentication on GitHub. SignPath Foundation requires it.
 2. Apply at [signpath.org](https://signpath.org/apply) and follow their review.

@@ -33,14 +33,9 @@ A new rule takes a snapshot every 4 hours and keeps it for 1 week. The [user gui
 
 To report a vulnerability, use [private vulnerability reporting](https://github.com/sm18lr88/BitShelter/security/advisories/new). Do not open a public issue. See [SECURITY.md](SECURITY.md).
 
-### Code signing policy
+### Code signing
 
-Signed releases use free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
-
-- Committers and reviewers: [sm18lr88](https://github.com/sm18lr88)
-- Approvers: [sm18lr88](https://github.com/sm18lr88)
-
-Until SignPath Foundation accepts the project, release MSIs are not signed, and Windows SmartScreen can show a warning.
+Release MSIs are not code-signed, so Windows SmartScreen can show a warning when you run one. The Release workflow builds each MSI on a GitHub-hosted runner from the tagged source code.
 
 ### Privacy
 
