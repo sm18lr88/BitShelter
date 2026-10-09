@@ -19,7 +19,8 @@ namespace BitShelter.VSS
         if (reg == null)
           return 64;
 
-        return (int)reg.GetValue(MaxShadowCountKeyName, 64);
+        // A value of the wrong type (for example REG_SZ, set by hand) counts as missing, as for VSS.
+        return reg.GetValue(MaxShadowCountKeyName) is int limit ? limit : 64;
       }
     }
 

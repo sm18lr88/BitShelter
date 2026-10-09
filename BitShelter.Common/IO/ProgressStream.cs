@@ -205,7 +205,7 @@ namespace BitShelter.IO
       this.BytesMoved = bytesMoved;
       this.StreamLength = streamLength;
       this.StreamPosition = streamPosition;
-      this.WasRead = WasRead;
+      this.WasRead = wasRead;
     }
   }
 
