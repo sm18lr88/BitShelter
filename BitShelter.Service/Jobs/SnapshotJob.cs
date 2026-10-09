@@ -56,10 +56,15 @@ namespace BitShelter.Service.Jobs
 
         List<Guid> snapshotIds = vss.CreateSnapshot(rule.Volumes).ToList();
 
-        PruningMgr.Instance.CreateNewInstances(rule.Id, snapshotIds);
+        if (!PruningMgr.Instance.TryCreateNewInstances(rule.Id, snapshotIds))
+        {
+          DeleteSnapshotsOfDeletedRule(rule, snapshotIds);
+          return ValueTask.CompletedTask;
+        }
 
+        // The snapshots exist and are recorded from here on. A failure must not retry and make a second set.
         if (rule.BackupEnabled && rule.BackupRules != null && rule.BackupRules.Count > 0)
-          ScheduleDueBackups(context.Scheduler, rule, snapshotIds);
+          TryScheduleDueBackups(context.Scheduler, rule, snapshotIds);
 
         Log.Debug("Completed SnapshotJob for {RuleId}", RuleId);
       }
@@ -83,6 +88,18 @@ namespace BitShelter.Service.Jobs
       return ValueTask.CompletedTask;
     }
 
+    private void TryScheduleDueBackups(IScheduler scheduler, SnapshotRule rule, IReadOnlyCollection<Guid> snapshotIds)
+    {
+      try
+      {
+        ScheduleDueBackups(scheduler, rule, snapshotIds);
+      }
+      catch (Exception ex)
+      {
+        Log.Error(ex, "Could not start the backups of rule {RuleName} for its new snapshot", rule.Name);
+      }
+    }
+
     private void ScheduleDueBackups(IScheduler scheduler, SnapshotRule rule, IReadOnlyCollection<Guid> snapshotIds)
     {
       long snapshotNumber = BackupStateMgr.Instance.NextSnapshotNumber(rule.Id);
@@ -96,9 +113,37 @@ namespace BitShelter.Service.Jobs
 
       Log.Debug("Scheduling BackupJob for {RuleId}: {BackupNames}", RuleId, due);
 
-      ITrigger trigger = TriggerBuilder.Create().StartNow().Build();
+      if (!BackupQueue.Instance.Enqueue(rule.Id, snapshotIds, due))
+        return;
 
-      scheduler.ScheduleJob(BackupJob.Create(rule.Id, snapshotIds, due), trigger).GetAwaiter().GetResult();
+      try
+      {
+        scheduler.ScheduleJob(BackupJob.CreateTrigger(rule.Id)).GetAwaiter().GetResult();
+      }
+      catch
+      {
+        BackupQueue.Instance.Cancel(rule.Id);
+        throw;
+      }
+    }
+
+    // The rule was deleted with its snapshots while this job created the new ones.
+    private static void DeleteSnapshotsOfDeletedRule(SnapshotRule rule, IEnumerable<Guid> snapshotIds)
+    {
+      Log.Information("Rule {RuleName} was deleted while it created snapshots. Deleting the new snapshots", rule.Name);
+
+      try
+      {
+        using var vss = new VssClient(new VssHost());
+        vss.Initialize(VssSnapshotContextInternal.All);
+
+        foreach (Guid id in snapshotIds)
+          vss.DeleteSnapshot(id);
+      }
+      catch (Exception ex)
+      {
+        Log.Error(ex, "Could not delete the new snapshots of deleted rule {RuleName}", rule.Name);
+      }
     }
 
     protected void Retry(Exception ex, IScheduler scheduler, IJobDetail jobDetail, int maxRetryCount, bool restartVss)

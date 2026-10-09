@@ -12,6 +12,9 @@ namespace BitShelter.Data
 {
   public static class SnapshotRuleEx
   {
+    // The group of the rule triggers. Retry triggers use the "SnapshotJob" group, so a rule rebuild keeps them.
+    public const string TriggerGroup = "SnapshotRule";
+
     public static bool IsExcludingDayRange(this SnapshotRule rule)
     {
       return (rule.Freq == Freq.Cron && rule.FreqCronDailyExcluding) || (rule.DailyFreq == DailyFreq.Every && rule.DailyFreqEveryExcluding);
@@ -64,7 +67,7 @@ namespace BitShelter.Data
       // Triggers are rebuilt with a past start time whenever rules change or the service starts.
       // DoNothing stops Quartz from treating that as a misfire and firing once immediately.
       var builder = TriggerBuilder.Create()
-        .WithIdentity(rule.ToString(), "SnapshotJob")
+        .WithIdentity(rule.ToString(), TriggerGroup)
         .WithCronSchedule(rule.GeneratedCron, cron => cron.WithMisfireInstruction(CronTriggerMisfireInstruction.DoNothing))
         .StartAt(rule.PeriodStart)
         .UsingJobData("RuleId", rule.Id)

@@ -2,11 +2,10 @@ using BitShelter.Data;
 using BitShelter.Models;
 using BitShelter.Service.Jobs;
 using Quartz;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BitShelter.Service.Scheduler
 {
@@ -15,8 +14,10 @@ namespace BitShelter.Service.Scheduler
     public static IJobDetail SnapshotJob => JobBuilder.Create<SnapshotJob>()
           .WithIdentity("SnapshotJob")
           .Build();
+    // Durable, so that it stays stored while no backup is queued.
     public static IJobDetail BackupJob => JobBuilder.Create<BackupJob>()
-          .WithIdentity("BackupJob")
+          .WithIdentity(Jobs.BackupJob.Key)
+          .StoreDurably()
           .Build();
     public static IJobDetail PruneJob => JobBuilder.Create<PruneJob>()
           .WithIdentity("PruneJob")
@@ -24,39 +25,48 @@ namespace BitShelter.Service.Scheduler
 
     public static void CreateAllTriggers(IEnumerable<SnapshotRule> rules)
     {
-      QuartzScheduler.Instance.Scheduler.Clear().GetAwaiter().GetResult();
-
-      CreatePruneJobTrigger();
-      CreateSnapshotJobTriggers(rules);
+      CreateAllTriggers(QuartzScheduler.Instance.Scheduler, rules);
     }
 
-    private static void CreatePruneJobTrigger()
+    // Replaces only the rule triggers. Pending snapshot retries and queued backups keep their triggers.
+    internal static void CreateAllTriggers(IScheduler scheduler, IEnumerable<SnapshotRule> rules)
+    {
+      scheduler.UnscheduleJobs(GroupMatcher<TriggerKey>.GroupEquals(SnapshotRuleEx.TriggerGroup)).GetAwaiter().GetResult();
+
+      if (!scheduler.Exists(Jobs.BackupJob.Key).GetAwaiter().GetResult())
+        scheduler.AddJob(BackupJob).GetAwaiter().GetResult();
+
+      CreatePruneJobTrigger(scheduler);
+
+      foreach (SnapshotRule rule in rules.Where(r => r.Enabled))
+        CreateSnapshotJobTrigger(scheduler, rule);
+    }
+
+    private static void CreatePruneJobTrigger(IScheduler scheduler)
     {
       ITrigger pruneTrigger = TriggerBuilder.Create()
+        .WithIdentity("PruneJob")
         .WithSimpleSchedule(s => s.WithInterval(TimeSpan.FromMinutes(1)).RepeatForever())
         .Build();
 
-      QuartzScheduler.Instance.Scheduler.ScheduleJob(PruneJob, pruneTrigger).GetAwaiter().GetResult();
+      scheduler.ScheduleJob(PruneJob, new[] { pruneTrigger }, ScheduleJobOptions.Replacing).GetAwaiter().GetResult();
     }
 
-    private static void CreateSnapshotJobTriggers(IEnumerable<SnapshotRule> rules)
+    // A rule that cannot be scheduled (an invalid schedule, or no run between its start and end dates) must not
+    // stop the other rules or the service.
+    private static void CreateSnapshotJobTrigger(IScheduler scheduler, SnapshotRule rule)
     {
-      List<ITrigger> snapshotTriggers = new List<ITrigger>();
-
-      foreach (var rule in rules.Where(r => r.Enabled))
+      try
       {
         if (rule.HasCalendar())
-          QuartzScheduler.Instance.Scheduler.AddCalendar(rule.GetCalendarName(), rule.GetCalendar(), AddCalendarOptions.ReplacingAndUpdatingTriggers).GetAwaiter().GetResult();
+          scheduler.AddCalendar(rule.GetCalendarName(), rule.GetCalendar(), AddCalendarOptions.ReplacingAndUpdatingTriggers).GetAwaiter().GetResult();
 
-        snapshotTriggers.Add(rule.GetTrigger());
+        scheduler.ScheduleJob(SnapshotJob, new[] { rule.GetTrigger() }, ScheduleJobOptions.Replacing).GetAwaiter().GetResult();
       }
-
-      Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> newSchedules = new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>>()
+      catch (Exception ex) when (ex is SchedulerException or ArgumentException or FormatException)
       {
-        { SnapshotJob, snapshotTriggers }
-      };
-
-      QuartzScheduler.Instance.Scheduler.ScheduleJobs(newSchedules, ScheduleJobOptions.Replacing).GetAwaiter().GetResult();
+        Log.Warning(ex, "Rule {RuleName} is not scheduled: its schedule is invalid or has no next run", rule.Name);
+      }
     }
   }
 }

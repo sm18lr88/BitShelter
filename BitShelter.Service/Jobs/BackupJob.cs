@@ -3,7 +3,6 @@ using BitShelter.Models;
 using BitShelter.Service.Backup;
 using BitShelter.Service.Data;
 using BitShelter.VSS;
-using Newtonsoft.Json;
 using Quartz;
 using Serilog;
 using System;
@@ -14,52 +13,51 @@ using System.Threading.Tasks;
 
 namespace BitShelter.Service.Jobs
 {
-  // Copies files from the snapshots that SnapshotJob just created. SnapshotJob starts one BackupJob
-  // with the backup rules that are due. Only one backup runs at a time.
+  // Copies files from the snapshots that SnapshotJob just created. SnapshotJob puts the backup in BackupQueue
+  // and schedules one trigger for it. Only one backup runs at a time: Quartz holds the other triggers back
+  // without using a worker thread for each waiting backup.
+  [DisallowConcurrentExecution]
   public class BackupJob : IJob
   {
-    private static readonly SemaphoreSlim OneAtATime = new SemaphoreSlim(1, 1);
+    public static readonly JobKey Key = new JobKey("BackupJob");
 
     public long RuleId { get; set; }
-    // JSON arrays, because Quartz job data holds simple values.
-    public string SnapshotIds { get; set; }
-    public string BackupNames { get; set; }
 
-    public static IJobDetail Create(long ruleId, IEnumerable<Guid> snapshotIds, IEnumerable<string> backupNames)
+    public static ITrigger CreateTrigger(long ruleId)
     {
-      return JobBuilder.Create<BackupJob>()
-        .WithIdentity("BackupJob " + ruleId + " " + Guid.NewGuid())
+      return TriggerBuilder.Create()
+        .WithIdentity("BackupJob " + ruleId + " " + Guid.NewGuid(), "BackupJob")
+        .ForJob(Key)
         .UsingJobData("RuleId", ruleId)
-        .UsingJobData("SnapshotIds", JsonConvert.SerializeObject(snapshotIds))
-        .UsingJobData("BackupNames", JsonConvert.SerializeObject(backupNames))
+        .StartNow()
         .Build();
     }
 
-    public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
     {
-      await OneAtATime.WaitAsync(cancellationToken).ConfigureAwait(false);
+      BackupQueue.Entry entry = BackupQueue.Instance.Take(RuleId);
+
+      if (entry == null)
+        return ValueTask.CompletedTask;
 
       try
       {
-        Run(cancellationToken);
+        Run(entry.SnapshotIds, entry.BackupNames, cancellationToken);
       }
       finally
       {
-        OneAtATime.Release();
+        BackupQueue.Instance.Finish(entry);
       }
+
+      return ValueTask.CompletedTask;
     }
 
-    private void Run(CancellationToken cancellationToken)
+    private void Run(List<Guid> snapshotIds, HashSet<string> names, CancellationToken cancellationToken)
     {
       SnapshotRule rule = RuleMgr.Instance.GetRule(RuleId);
 
       if (rule == null || !rule.Enabled || !rule.BackupEnabled)
         return;
-
-      List<Guid> snapshotIds = JsonConvert.DeserializeObject<List<Guid>>(SnapshotIds ?? "[]");
-      HashSet<string> names = JsonConvert.DeserializeObject<HashSet<string>>(BackupNames ?? "[]");
-
-      PruningMgr.Instance.Pin(snapshotIds);
 
       try
       {
@@ -80,10 +78,6 @@ namespace BitShelter.Service.Jobs
 
         foreach (BackupRule backup in rule.BackupRules.Where(b => names.Contains(b.Name)))
           Record(rule, backup, Failed(rule, backup, DateTime.Now, ex));
-      }
-      finally
-      {
-        PruningMgr.Instance.Unpin(snapshotIds);
       }
     }
 

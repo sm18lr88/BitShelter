@@ -45,16 +45,16 @@ namespace BitShelter.Service.Data
       VssScheduler.CreateAllTriggers(Rules);
     }
 
+    // rule is the copy that the Agent sent. Changes must go to the live rule in RulesMap.
     public bool DeleteRule(SnapshotRule rule, bool deleteSnapshots)
     {
-      rule.Enabled = false;
+      SnapshotRule liveRule = GetRule(rule.Id);
+
+      if (liveRule == null)
+        return false;
 
       if (deleteSnapshots)
-        using (var vss = new VssClient(new VssHost()))
-        {
-          vss.Initialize(VssSnapshotContextInternal.All);
-          PruningMgr.Instance.DeleteAllForRule(vss, rule);
-        }
+        DeleteAllSnapshots(liveRule);
 
       bool ret = RulesMap.TryRemove(rule.Id, out SnapshotRule value);
 
@@ -68,6 +68,29 @@ namespace BitShelter.Service.Data
       BackupStateMgr.Instance.ForgetRule(rule.Id);
 
       return ret;
+    }
+
+    // The rule stops first, so that it does not create a snapshot while its snapshots are deleted. If the
+    // deletion fails, the rule is kept and runs again.
+    private void DeleteAllSnapshots(SnapshotRule rule)
+    {
+      bool wasEnabled = rule.Enabled;
+      rule.Enabled = false;
+      VssScheduler.CreateAllTriggers(Rules);
+
+      try
+      {
+        using var vss = new VssClient(new VssHost());
+        vss.Initialize(VssSnapshotContextInternal.All);
+        PruningMgr.Instance.DeleteAllForRule(vss, rule);
+      }
+      catch
+      {
+        PruningMgr.Instance.KeepRule(rule.Id);
+        rule.Enabled = wasEnabled;
+        VssScheduler.CreateAllTriggers(Rules);
+        throw;
+      }
     }
 
     public void SaveRules()

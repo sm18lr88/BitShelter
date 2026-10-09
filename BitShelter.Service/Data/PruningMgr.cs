@@ -18,6 +18,9 @@ namespace BitShelter.Service.Data
     private object _lockSave = new object();
     // Snapshots that a running backup reads. Pruning skips them until the backup ends.
     private readonly ConcurrentDictionary<Guid, int> _pinned = new ConcurrentDictionary<Guid, int>();
+    // Rules whose snapshots are deleted with the rule. A snapshot job that runs at that moment must not record
+    // its new snapshots, because nothing would prune them after the rule is gone.
+    private readonly HashSet<long> _deletedRules = new HashSet<long>();
 
     protected PruningMgr() { }
 
@@ -43,6 +46,7 @@ namespace BitShelter.Service.Data
     {
       lock (_lockProcessing)
       {
+        _deletedRules.Add(rule.Id);
         bool allDeleted = DeleteSnapshots(vss, SafeGetInstances(rule.Id).ToList());
 
         Save();
@@ -123,10 +127,21 @@ namespace BitShelter.Service.Data
           _pinned.TryRemove(id, out _);
     }
 
-    public void CreateNewInstances(long ruleId, IEnumerable<Guid> snapshotIds)
+    // Called when the deletion of a rule failed and the rule stays.
+    public void KeepRule(long ruleId)
+    {
+      lock (_lockProcessing)
+        _deletedRules.Remove(ruleId);
+    }
+
+    // Returns false, and records nothing, if the rule is being deleted with its snapshots.
+    public bool TryCreateNewInstances(long ruleId, IEnumerable<Guid> snapshotIds)
     {
       lock (_lockProcessing)
       {
+        if (_deletedRules.Contains(ruleId))
+          return false;
+
         List<SnapshotInstance> ruleInstances = SafeGetInstances(ruleId);
         DateTime now = DateTime.Now;
 
@@ -138,6 +153,7 @@ namespace BitShelter.Service.Data
         }));
 
         Save();
+        return true;
       }
     }
 
