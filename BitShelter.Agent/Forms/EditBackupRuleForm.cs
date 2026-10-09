@@ -37,7 +37,7 @@ namespace BitShelter.Agent.Forms
       tbPublicKey.TextChanged += (_, _) => DescribePublicKey();
       cbArchive.CheckedChanged += (_, _) => RefreshState();
       cbArchiveType.SelectedIndexChanged += (_, _) => FillCompressions();
-      cbEncryption.SelectedIndexChanged += (_, _) => RefreshState();
+      cbEncryption.SelectedIndexChanged += (_, _) => { FillCompressions(); RefreshState(); };
       btnOk.Click += (_, _) => Save();
 
       cbArchiveType.SelectedItem = ArchiveType.Zip;
@@ -165,9 +165,20 @@ namespace BitShelter.Agent.Forms
     }
 
     // Called explicitly too: setting SelectedItem to the item that is already selected raises no event.
+    // Keeps the selected method when it is still available, and otherwise selects Deflate (the engine writes
+    // an encrypted zip of an older rule with BZip2 or PPMd with Deflate too).
     private void FillCompressions()
     {
-      cbCompression.DataSource = ((ArchiveType)cbArchiveType.SelectedItem).GetAvailableCompressions().ToList();
+      bool encrypted = cbEncryption.SelectedItem is BackupEncryption encryption && encryption != BackupEncryption.None;
+      object selected = cbCompression.SelectedItem;
+      List<CompressionType> available = ((ArchiveType)cbArchiveType.SelectedItem).GetAvailableCompressions(encrypted).ToList();
+
+      cbCompression.DataSource = available;
+
+      if (selected is CompressionType compression && available.Contains(compression))
+        cbCompression.SelectedItem = compression;
+      else if (available.Contains(CompressionType.Deflate))
+        cbCompression.SelectedItem = CompressionType.Deflate;
     }
 
     private void AddInputFolder()

@@ -83,6 +83,24 @@ namespace BitShelter.Tests.Agent
       });
     }
 
+    [Fact]
+    public void Backup_editor_offers_only_Deflate_and_None_for_an_encrypted_zip()
+    {
+      RunOnStaThread(() =>
+      {
+        BackupRule original = Backup();
+        original.ArchiveType = ArchiveType.Zip;
+        original.CompressionType = CompressionType.BZip2;
+        using var form = Create<EditBackupRuleForm>(original, Array.Empty<string>());
+
+        var compressions = (ComboBox)typeof(EditBackupRuleForm).GetField("cbCompression", NonPublic)!.GetValue(form)!;
+        var saved = (BackupRule)typeof(EditBackupRuleForm).GetMethod("BuildRule", NonPublic)!.Invoke(form, null)!;
+
+        Assert.Equal(new[] { CompressionType.None, CompressionType.Deflate }, compressions.Items.Cast<CompressionType>());
+        Assert.Equal(CompressionType.Deflate, saved.CompressionType);
+      });
+    }
+
     private static BackupRule Backup()
     {
       return new BackupRule

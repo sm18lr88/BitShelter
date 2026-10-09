@@ -120,6 +120,23 @@ namespace BitShelter.Tests.Backup
     }
 
     [Fact]
+    public void Encrypted_zip_of_an_older_rule_with_BZip2_is_written_with_Deflate()
+    {
+      BackupRule backup = Rule();
+      backup.CompressionType = CompressionType.BZip2;
+      backup.Encryption = BackupEncryption.PgpPassphrase;
+      backup.EncryptionType = EncryptionAlgorithm.AES256_CFB;
+      backup.ProtectedPassphrase = PassphraseProtector.Protect("correct horse battery");
+
+      BackupResult result = Run(backup);
+
+      byte[] zipBytes = OpenPgpTestHelper.DecryptWithPassphrase(File.ReadAllBytes(result.OutputPath), "correct horse battery", out _);
+      using var zip = new ZipArchive(new MemoryStream(zipBytes));
+      using var reader = new StreamReader(zip.Entries.Single(e => e.FullName.EndsWith("/docs/notes.txt")).Open());
+      Assert.Equal("notes", reader.ReadToEnd());
+    }
+
+    [Fact]
     public void Public_key_encrypted_backup_decrypts_with_the_private_key()
     {
       var key = OpenPgpTestHelper.CreateKey();

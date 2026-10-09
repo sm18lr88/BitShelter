@@ -11,8 +11,12 @@ namespace BitShelter.IO
 {
   public static class CompressionTypeEx
   {
-    public static IEnumerable<CompressionType> GetAvailableCompressions(this ArchiveType archiveType)
+    // An encrypted zip offers only the methods that BackupWriter can stream with Zip64 (no 4 GB limit).
+    public static IEnumerable<CompressionType> GetAvailableCompressions(this ArchiveType archiveType, bool encrypted = false)
     {
+      if (archiveType == ArchiveType.Zip && encrypted)
+        return new List<CompressionType>() { CompressionType.None, CompressionType.Deflate };
+
       switch (archiveType)
       {
         case ArchiveType.Tar:
