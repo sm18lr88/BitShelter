@@ -11,7 +11,8 @@ namespace BitShelter.Backup
   public static class BackupFileWalker
   {
     // An empty include list includes every file. An exclude match on a folder skips the whole folder.
-    // Folder junctions and symbolic links are not followed, so a link cannot pull in data outside the input folder.
+    // Junctions and symbolic links (to folders or files) are not followed, so a link cannot pull in data outside
+    // the input folder. An absolute link target would also resolve to the live volume, not to the snapshot.
     public static IEnumerable<BackupFile> Enumerate(
       BackupSource source,
       ICollection<PathFilter> includes,
@@ -57,6 +58,9 @@ namespace BitShelter.Backup
 
             continue;
           }
+
+          if (item.LinkTarget != null)
+            continue;
 
           if (includes.Count > 0 && !includes.Any(f => f.Apply(logicalPath)))
             continue;
