@@ -28,6 +28,14 @@ namespace BitShelter.Tests.Ipc
     }
 
     [Fact]
+    public void The_service_account_owns_the_pipe()
+    {
+      using WindowsIdentity current = WindowsIdentity.GetCurrent();
+
+      Assert.Equal(current.User, SnapshotPipeServer.CreatePipeSecurity().GetOwner(typeof(SecurityIdentifier)));
+    }
+
+    [Fact]
     public void Administrators_can_read_and_write_but_not_create_pipe_instances()
     {
       PipeAccessRule admins = GetRules().Single(r => r.IdentityReference.Equals(Administrators));

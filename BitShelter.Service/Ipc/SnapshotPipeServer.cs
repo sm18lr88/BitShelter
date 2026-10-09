@@ -2,6 +2,7 @@ using BitShelter.Ipc;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -86,12 +87,16 @@ namespace BitShelter.Service.Ipc
 
     // The service runs as LocalSystem and can create and delete shadow copies, so only the
     // service account and elevated administrators (the Agent requires elevation) may connect.
+    // The service account is also the owner: the Agent checks it to detect a pipe that another user created.
     internal static PipeSecurity CreatePipeSecurity()
     {
       var security = new PipeSecurity();
 
       using (WindowsIdentity serviceIdentity = WindowsIdentity.GetCurrent())
+      {
+        security.SetOwner(serviceIdentity.User);
         security.AddAccessRule(new PipeAccessRule(serviceIdentity.User, PipeAccessRights.FullControl, AccessControlType.Allow));
+      }
 
       var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
       security.AddAccessRule(new PipeAccessRule(admins, PipeAccessRights.ReadWrite, AccessControlType.Allow));
@@ -117,6 +122,12 @@ namespace BitShelter.Service.Ipc
       try
       {
         HandleRequest(server);
+      }
+      // A client that closes the pipe before it sends a complete request (for example a tool that only checks
+      // that the pipe exists) is not a server error.
+      catch (EndOfStreamException)
+      {
+        Log.Debug("A SnapshotPipeServer client disconnected before it sent a complete request");
       }
       catch (Exception ex)
       {

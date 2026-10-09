@@ -3,6 +3,7 @@ using BitShelter.Models;
 using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
+using System.Security.Principal;
 
 namespace BitShelter.Agent.Ipc
 {
@@ -18,6 +19,9 @@ namespace BitShelter.Agent.Ipc
       this.serverName = string.IsNullOrWhiteSpace(serverName) ? "." : serverName;
       connectTimeoutMs = (int)(connectTimeout ?? SnapshotIpcProtocol.DefaultConnectTimeout).TotalMilliseconds;
     }
+
+    // Tests turn this off, because their in-process server belongs to the test user.
+    internal bool RequireServiceOwner { get; init; } = true;
 
     public bool Ping()
     {
@@ -57,6 +61,10 @@ namespace BitShelter.Agent.Ipc
       using (var client = new NamedPipeClientStream(serverName, pipeName, PipeDirection.InOut))
       {
         client.Connect(connectTimeoutMs);
+
+        if (RequireServiceOwner)
+          VerifyServiceOwner(client);
+
         SnapshotIpcStream.WriteJson(client, request);
         var response = SnapshotIpcStream.ReadJson<SnapshotIpcResponse<T>>(client);
 
@@ -67,6 +75,17 @@ namespace BitShelter.Agent.Ipc
 
         return response.Result;
       }
+    }
+
+    // While the service is stopped, any local user can create a pipe with this name. The requests carry rules
+    // with passphrases that any local user can unprotect (machine-scope DPAPI), so the Agent talks only to a pipe
+    // that LocalSystem owns. The service sets itself as the owner (SnapshotPipeServer.CreatePipeSecurity).
+    private void VerifyServiceOwner(NamedPipeClientStream client)
+    {
+      var owner = client.GetAccessControl().GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
+
+      if (owner == null || !owner.IsWellKnown(WellKnownSidType.LocalSystemSid))
+        throw new UnauthorizedAccessException($"The pipe {pipeName} does not belong to the BitShelter service (owner: {owner?.Value ?? "unknown"}).");
     }
   }
 }

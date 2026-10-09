@@ -62,7 +62,7 @@ namespace BitShelter.Tests.Ipc
       using var server = new SnapshotPipeServer(new TestSnapshotService(), pipeName);
       server.Start();
 
-      var client = new SnapshotClient(pipeName: pipeName);
+      var client = new SnapshotClient(pipeName: pipeName) { RequireServiceOwner = false };
 
       Assert.True(client.Ping());
 
@@ -97,11 +97,37 @@ namespace BitShelter.Tests.Ipc
       using var server = new SnapshotPipeServer(new TestSnapshotService(), pipeName);
       server.Start();
 
-      BackupResult result = Assert.Single(new SnapshotClient(pipeName: pipeName).GetBackupResults(sinceId: 1));
+      BackupResult result = Assert.Single(new SnapshotClient(pipeName: pipeName) { RequireServiceOwner = false }.GetBackupResults(sinceId: 1));
 
       Assert.Equal("new", result.BackupName);
       Assert.Equal("Disk full", result.Message);
       Assert.True(result.Notify);
+    }
+
+    [Fact]
+    public void SnapshotClient_refuses_a_pipe_that_LocalSystem_does_not_own()
+    {
+      string pipeName = $"{SnapshotIpcProtocol.PipeName}.tests.{Guid.NewGuid():N}";
+
+      // The in-process server belongs to the test user, as a pipe that another user created would.
+      using var server = new SnapshotPipeServer(new TestSnapshotService(), pipeName);
+      server.Start();
+
+      Assert.Throws<UnauthorizedAccessException>(() => new SnapshotClient(pipeName: pipeName).Ping());
+    }
+
+    [Fact]
+    public void A_client_that_disconnects_without_a_request_does_not_stop_the_server()
+    {
+      string pipeName = $"{SnapshotIpcProtocol.PipeName}.tests.{Guid.NewGuid():N}";
+
+      using var server = new SnapshotPipeServer(new TestSnapshotService(), pipeName);
+      server.Start();
+
+      using (var silent = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut))
+        silent.Connect(ConnectTimeoutMs);
+
+      Assert.True(new SnapshotClient(pipeName: pipeName) { RequireServiceOwner = false }.Ping());
     }
 
     [Fact]
@@ -153,7 +179,7 @@ namespace BitShelter.Tests.Ipc
       server.Start();
 
       // A long connect timeout: the test checks that every concurrent request succeeds, not how fast the machine is.
-      var clients = Enumerable.Range(0, 20).Select(_ => new SnapshotClient(pipeName: pipeName, connectTimeout: TimeSpan.FromSeconds(60))).ToArray();
+      var clients = Enumerable.Range(0, 20).Select(_ => new SnapshotClient(pipeName: pipeName, connectTimeout: TimeSpan.FromSeconds(60)) { RequireServiceOwner = false }).ToArray();
 
       Assert.True(clients[0].Ping());
 
