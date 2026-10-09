@@ -237,7 +237,7 @@ namespace BitShelter.Agent.Forms
 
     private bool ValidatePeriod()
     {
-      if (!rbPeriodEndDate.Checked && dtpPeriodEnd.Value <= dtpPeriodStart.Value)
+      if (rbPeriodEndDate.Checked && dtpPeriodEnd.Value <= dtpPeriodStart.Value)
       {
         // Display error
         SetStyleInvalid(lblPeriodStart, lblPeriodEnd);

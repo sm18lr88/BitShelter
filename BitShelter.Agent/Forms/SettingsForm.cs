@@ -93,15 +93,19 @@ namespace BitShelter
     {
       try
       {
-        SnapshotClient.AddOrUpdateRule(rule);
+        bool saved = SnapshotClient.AddOrUpdateRule(rule);
 
         dgSnapshotRules.DataSource = SnapshotClient.GetRules();
 
-        return true;
+        if (!saved)
+          ShowError("The service could not save the rule. See the service log for details.");
+
+        return saved;
       }
       catch (Exception ex)
       {
         Log.Error(ex, "Error while requesting Addition/Edition of SnapshotRule {Id}.", rule?.Id);
+        ShowError("The rule was not saved: " + ex.Message);
 
         return false;
       }
@@ -111,18 +115,27 @@ namespace BitShelter
     {
       try
       {
-        SnapshotClient.DeleteRule(rule, deleteSnapshots);
+        bool deleted = SnapshotClient.DeleteRule(rule, deleteSnapshots);
 
         dgSnapshotRules.DataSource = SnapshotClient.GetRules();
 
-        return true;
+        if (!deleted)
+          ShowError("The service could not delete the rule. See the service log for details.");
+
+        return deleted;
       }
       catch (Exception ex)
       {
         Log.Error(ex, "Error while requesting Deletion of SnapshotRule {Id}.", rule?.Id);
+        ShowError("The rule was not deleted: " + ex.Message);
 
         return false;
       }
+    }
+
+    private void ShowError(string message)
+    {
+      MessageBox.Show(this, message, "BitShelter", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
     private DataGridViewButtonColumn CreateButtonColumn(string mappingName, string headerName, DataGridViewAutoSizeColumnMode autoSizeMode, int? width = null)

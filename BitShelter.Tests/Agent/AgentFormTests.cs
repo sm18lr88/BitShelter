@@ -58,6 +58,25 @@ namespace BitShelter.Tests.Agent
     }
 
     [Theory]
+    [InlineData(true, -1, false)]
+    [InlineData(true, 1, true)]
+    [InlineData(false, -1, true)]
+    public void Rule_editor_rejects_an_end_date_before_the_start_date_only_when_the_end_date_is_on(bool endEnabled, int endOffsetDays, bool valid)
+    {
+      RunOnStaThread(() =>
+      {
+        SnapshotRule rule = Generate(Create<EditSnapshotRuleForm>((SnapshotRule?)null));
+        rule.PeriodStart = DateTime.Today;
+        rule.PeriodEndEnabled = endEnabled;
+        rule.PeriodEnd = DateTime.Today.AddDays(endOffsetDays);
+
+        using var form = Create<EditSnapshotRuleForm>(rule);
+
+        Assert.Equal(valid, (bool)typeof(EditSnapshotRuleForm).GetMethod("ValidatePeriod", NonPublic)!.Invoke(form, null)!);
+      });
+    }
+
+    [Theory]
     [InlineData(ArchiveType.Tar, CompressionType.GZip)]
     [InlineData(ArchiveType.Zip, CompressionType.Deflate)]
     public void Backup_editor_opens_and_keeps_the_backup_settings(ArchiveType archiveType, CompressionType compressionType)
