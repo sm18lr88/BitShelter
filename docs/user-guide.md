@@ -112,7 +112,7 @@ The rule must snapshot the drive of each folder that you back up, because the ba
 
 A backup is saved as `<output folder>\<rule name> - <backup name>\<yyyyMMdd-HHmmss><extension>`, for example `D:\Backups\Daily - Documents\20261008-140000.zip.gpg`. It has a `.partial` name until it is complete.
 
-Formats: folder copy, zip (stored, deflate, bzip2, PPMd), or tar (none, gzip, bzip2, lzip). Ciphers: AES128/256, Blowfish, Camellia128/256, CAST5, 3-DES, and Twofish.
+Formats: folder copy, zip (stored, deflate, bzip2, PPMd; an encrypted zip: stored or deflate), or tar (none, gzip, bzip2, lzip). Ciphers: AES128/256, Blowfish, Camellia128/256, CAST5, 3-DES, and Twofish.
 
 > [!WARNING]
 > Keep your OpenPGP private key or passphrase somewhere other than the backed-up computer. Without it, nobody can decrypt the backups.
@@ -153,9 +153,10 @@ From version 0.2.0, only SYSTEM and Administrators can access `%ProgramData%\Bit
 
 - At most [512 snapshots per drive](https://learn.microsoft.com/en-us/windows/win32/backup/registry-keys-for-backup-and-restore#maxshadowcopies).
 - You must turn on System Protection by hand for each drive.
-- Encryption works only with archives. An encrypted zip can be at most 4 GB; use tar for larger encrypted backups.
+- Encryption works only with archives. An encrypted zip uses Deflate or no compression.
 - BitShelter has no restore function for backups. Use the standard tools above.
 - If a file cannot be read during a backup, it is skipped and logged.
+- Backups do not follow symbolic links or junctions. A linked file or folder is not in the backup.
 - BitShelter cannot update itself.
 
 ## FAQ

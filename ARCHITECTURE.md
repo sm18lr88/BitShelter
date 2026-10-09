@@ -45,6 +45,7 @@ For this reason, the pipe ACL (`SnapshotPipeServer.CreatePipeSecurity`) grants a
 
 A process of a standard user, or a non-elevated process of an administrator, cannot connect.
 The Agent manifest requests `requireAdministrator`, so Windows starts the Agent elevated.
+The service account also owns the pipe. Before each request, the Agent checks that LocalSystem owns the pipe (`SnapshotClient`). While the service is stopped, a standard user can create a pipe with the same name, and the requests carry rules with protected passphrases.
 Do not grant access to Authenticated Users or to other broad groups.
 
 ### Data and state
@@ -72,18 +73,18 @@ The service uses Quartz 4 with an in-memory job store. Quartz keeps no data on d
 
 1. At startup, the service starts Quartz, starts logging, and loads `instances.json` and the newest rule file.
 2. The service creates the triggers (`VssScheduler.CreateAllTriggers`) and then starts the named-pipe server.
-3. After each rule change, the service clears the scheduler and creates all triggers again.
+3. After each rule change, the service replaces the rule triggers (group `SnapshotRule`). Retry triggers and queued backups stay. A rule that has an invalid schedule, or no run between its start and end dates, is logged and skipped. It does not stop the other rules.
 
 | Job | Trigger | Action |
 |---|---|---|
 | `SnapshotJob` | One trigger for each enabled rule | Creates the snapshots of one rule. If it fails, it tries again after 1 minute, up to the retry count of the rule. If the rule asks for it, the job restarts the `VSS` service before each retry. With the **Global** pruning strategy, the job first deletes the oldest snapshots of the rule on each volume that is at its limit (`VolumeLimitPruning`), so that VSS does not delete a snapshot of another rule or a System Restore point. When it succeeds and backups are on, it increments the snapshot counter and starts a `BackupJob` for the backup rules that are due. |
 | `PruneJob` | Every minute | Deletes the snapshots that are older than the lifetime of their rule. It skips the snapshots that a running backup reads. |
-| `BackupJob` | Started by `SnapshotJob` | Reads the input folders from the new snapshots and writes one backup for each due backup rule. Only one backup runs at a time. It saves each result in `backups.json` and writes it to the log and the Windows Event Log. |
+| `BackupJob` | One trigger from `SnapshotJob` for each new snapshot set with due backups | Reads the input folders from the new snapshots and writes one backup for each due backup rule. Only one backup runs at a time (`DisallowConcurrentExecution`). Quartz holds the other triggers back without using a worker thread, so waiting backups do not block snapshots or pruning. `BackupQueue` keeps at most one waiting backup for each rule: a newer snapshot replaces the snapshot of the waiting backup and adds its due backup rules. The queue pins the snapshots of a waiting or running backup. If the backups cannot start, `SnapshotJob` logs an error and does not retry, because the snapshots exist. It saves each result in `backups.json` and writes it to the log and the Windows Event Log. |
 
 #### Backup flow
 
 1. `SnapshotBackupSources` maps each input folder to the same folder in the snapshot of its volume, for example `\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy7\Docs`.
-2. `BackupFileWalker` lists the files. It applies the include and exclude patterns to the normal path of each file, and does not follow folder junctions or symbolic links.
+2. `BackupFileWalker` lists the files. It applies the include and exclude patterns to the normal path of each file, and does not follow junctions or symbolic links, to folders or to files.
 3. `BackupWriter` writes a folder copy or a zip or tar archive. For an encrypted backup, the archive goes through `OpenPgpEncryption` (an OpenPGP message with an integrity check). `SizeLimitStream` stops the backup when it exceeds its size limit.
 4. `BackupEngine` writes to a `.partial` name, renames the result when it is complete, and then applies the count and total-size limits (`BackupRetention`).
 5. The Agent asks for new results once a minute (`BackupNotifier`) and shows a notification when the rule asks for one.
@@ -100,7 +101,7 @@ The service uses Quartz 4 with an in-memory job store. Quartz keeps no data on d
 
 - Snapshots use one of two contexts. Both are persistent and client-accessible, so File Explorer shows them under Previous Versions:
   - `ClientAccessible` (default): no VSS writers.
-  - `ClientAccessibleWriters` (the rule option **Ask applications to save their data first**): writers flush their data first, as for System Restore points. The requester uses non-component mode and the `VSS_BT_COPY` backup type, so it does not change the backup history of applications. A failed writer is logged as a warning and does not stop the snapshot.
+  - `ClientAccessibleWriters` (the rule option **Ask applications to save their data first**): writers flush their data first, as for System Restore points. The requester uses non-component mode and the `VSS_BT_COPY` backup type, so it does not change the backup history of applications. A failed writer is logged as a warning and does not stop the snapshot. After `DoSnapshotSet` succeeds, a failure in the writer status check or in `BackupComplete` is also only a warning, so that the service still records the new snapshots for pruning.
 - Each operation uses a new VSS session (`IVssBackupComponents`). In writer mode, a query on the session that then creates the snapshot makes `AddToSnapshotSet` fail. For this reason, `SnapshotJob` makes room in its own session before it creates the snapshot.
 - The service sets the process COM security for a VSS requester at startup (`VssClient.InitializeProcessSecurity`), as documented by Microsoft.
 - Rules from earlier versions can contain other VSS contexts. `SnapshotRule.SnapshotContext` maps a context with writers to `ClientAccessibleWriters` and any other context to `ClientAccessible`.
@@ -108,4 +109,4 @@ The service uses Quartz 4 with an in-memory job store. Quartz keeps no data on d
 ### Known gaps
 
 - BitShelter has no restore function for backups. Users restore with standard tools (see the [user guide](docs/user-guide.md#backups)).
-- An encrypted zip backup cannot use Zip64, so it is limited to 4 GB. Encrypted tar backups have no such limit.
+- An encrypted zip backup cannot seek, so `BackupWriter` writes it with System.IO.Compression, which streams Zip64 with data descriptors. It has only the Deflate and None methods. An older rule with BZip2 or PPMd for an encrypted zip gets Deflate.

@@ -2,6 +2,23 @@
 
 All notable changes to BitShelter are in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+### [Unreleased]
+
+#### Fixed
+
+- With **Ask applications to save their data first**, a VSS error after the snapshot was created made the service retry. The service then made a second snapshot and never deleted the first one. Now the error is a warning, and the snapshot is recorded and pruned as usual.
+- A rule with an end date before its start date, or with no run between the two dates, stopped all rules from running. It could also stop the service from starting. Now the service skips that rule and logs a warning, and the Agent marks such an end date as invalid.
+- A rule change no longer cancels a pending snapshot retry.
+- Backups that wait for another backup no longer block snapshots and pruning, and their snapshots are no longer pruned while they wait. If a rule takes a new snapshot while its backup still waits, the waiting backup uses the new snapshot, so slow backups no longer pile up.
+- If the service cannot start the backups of a new snapshot, it logs an error. Before, it took the snapshot again.
+- Encrypted zip backups can be larger than 4 GB. An encrypted zip now uses Deflate or no compression: the Agent no longer offers BZip2 or PPMd for it, and an older rule with one of these methods is written with Deflate.
+- Backups no longer follow symbolic links to files. Links to folders were already skipped.
+- The Agent checks that the service owns the named pipe before it sends a request.
+- The Agent shows an error when the service cannot save or delete a rule.
+- The tray Agent now exits when the installer asks it to close, so an upgrade or uninstall no longer leaves it running with its files removed.
+- Deleting a rule together with its snapshots stops the rule first. A snapshot that the rule creates during the deletion is deleted too, so no snapshot is left that is never pruned.
+- A `MaxShadowCopies` registry value of the wrong type no longer makes snapshots fail with the **Global** pruning strategy.
+
 ### [0.2.0] - 2026-10-08
 
 This release moves BitShelter to .NET 10 and Windows 11, and adds backups.

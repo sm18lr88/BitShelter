@@ -33,9 +33,9 @@ The named-pipe tests connect to a pipe that only Administrators can open, and th
 
 #### Privileged VSS test (opt-in)
 
-`VssBackupIntegrationTests` creates a real shadow copy of the drive of `%TEMP%`, once without and once with VSS writers, changes a file, and checks that the backup contains the version from the snapshot. At the end, it deletes the shadow copy. The test is skipped unless you set `BITSHELTER_VSS_TESTS=1`. Run it from an elevated shell:
+`VssBackupIntegrationTests` creates a real shadow copy of the drive of `%TEMP%`, once without and once with VSS writers, changes a file, and checks that the backup contains the version from the snapshot. At the end, it deletes the shadow copy. `VssClientSequenceTests` also has a privileged test: it creates a real shadow copy with VSS writers, makes the writer steps after `DoSnapshotSet` fail, and checks that the shadow copy IDs are still returned. These tests are skipped unless you set `BITSHELTER_VSS_TESTS=1`. They run one at a time (`RealVssCollection`), because VSS takes one shadow copy set at a time. Run them from an elevated shell:
 
-- PowerShell: `$env:BITSHELTER_VSS_TESTS = "1"; dotnet test --project .\BitShelter.Tests -c Release --filter-class "*VssBackupIntegrationTests"`
+- PowerShell: `$env:BITSHELTER_VSS_TESTS = "1"; dotnet test --solution .\BitShelter.slnx -c Release`
 
 ### Benchmark
 
@@ -62,7 +62,7 @@ A normal test run cannot safely validate these areas:
 Manual checklist (Windows 11 x64):
 
 1. Enable **System Protection** on the target drive(s).
-2. Build and install the MSI (`dotnet build .\BitShelter.Setup -c Release`), then confirm `Get-Service BitShelter` reports `Running` and `sc.exe qfailure BitShelter` shows the restart actions.
+2. Build and install the MSI (`dotnet build .\BitShelter.Setup -c Release`). Each build has a new ProductCode, and an MSI replaces only older versions. Before you install a new build of the same `<Version>`, uninstall the installed one, or both stay installed with the old binaries. Then confirm `Get-Service BitShelter` reports `Running` and `sc.exe qfailure BitShelter` shows the restart actions.
 3. Start the Agent (it asks for elevation) and confirm it connects to the service (no "connection failed" banner).
 4. Create a snapshot rule, wait for it to run, then verify shadow copies exist (`vssadmin list shadows`).
 5. Browse "Previous versions" in Explorer and confirm restore works.
