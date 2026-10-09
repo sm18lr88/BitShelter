@@ -22,6 +22,13 @@ namespace BitShelter.VSS
 
     public IUIHost Host { get; }
 
+    // Tests use this to run the call sequence against a fake IVssBackupComponents.
+    internal VssClient(IUIHost host, IVssBackupComponents components, bool withWriters) : this(host)
+    {
+      this.components = components;
+      this.withWriters = withWriters;
+    }
+
     // Call once at process start, before any other COM use. VSS writers call back into the requester process.
     public static void InitializeProcessSecurity()
     {

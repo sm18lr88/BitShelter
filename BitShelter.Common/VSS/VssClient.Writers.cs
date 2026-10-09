@@ -10,8 +10,17 @@ namespace BitShelter.VSS
   {
     private void GatherWriterMetadata()
     {
-      Wait(components.GatherWriterMetadata(out nint async), async, "GatherWriterMetadata");
-      VssException.ThrowIfFailed(components.FreeWriterMetadata(), "FreeWriterMetadata");
+      int freeResult;
+      try
+      {
+        Wait(components.GatherWriterMetadata(out nint async), async, "GatherWriterMetadata");
+      }
+      finally
+      {
+        freeResult = components.FreeWriterMetadata();
+      }
+
+      VssException.ThrowIfFailed(freeResult, "FreeWriterMetadata");
     }
 
     private void PrepareForBackup()
@@ -20,10 +29,25 @@ namespace BitShelter.VSS
       WarnAboutFailedWriters("PrepareForBackup");
     }
 
+    // The shadow copies exist once DoSnapshotSet succeeds, so a failure here must not hide their IDs from the
+    // caller, which records them for pruning. Otherwise the job retries, creates a second set, and never deletes
+    // the first one. BackupComplete runs even when the writer status check fails.
     private void CompleteBackup()
     {
-      WarnAboutFailedWriters("DoSnapshotSet");
-      Wait(components.BackupComplete(out nint async), async, "BackupComplete");
+      WarnIfFails(() => WarnAboutFailedWriters("DoSnapshotSet"));
+      WarnIfFails(() => Wait(components.BackupComplete(out nint async), async, "BackupComplete"));
+    }
+
+    private void WarnIfFails(Action step)
+    {
+      try
+      {
+        step();
+      }
+      catch (Exception ex)
+      {
+        Host.WriteWarning("The shadow copies were created, but a later VSS step failed: {0}", ex.Message);
+      }
     }
 
     // A failed writer does not stop the shadow copy: its files are then only crash-consistent, like a snapshot

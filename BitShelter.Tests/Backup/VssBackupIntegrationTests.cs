@@ -8,6 +8,7 @@ namespace BitShelter.Tests.Backup
 {
   // Privileged test: it creates a real shadow copy and deletes it at the end.
   // Run it from an elevated shell with BITSHELTER_VSS_TESTS=1 (see TESTING.md).
+  [Collection(nameof(Vss.RealVssCollection))]
   public sealed class VssBackupIntegrationTests : IDisposable
   {
     private readonly string root = Directory.CreateTempSubdirectory("bitshelter-vss-tests-").FullName;
