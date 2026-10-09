@@ -25,6 +25,7 @@ namespace BitShelter.Agent
     private NotifyIcon trayIcon;
     private ContextMenuStrip trayContextMenuStrip;
     private BackupNotifier backupNotifier;
+    private CloseRequestWindow closeRequestWindow;
 
     public ToolStripMenuItem RunAtStartupMenuItem { get; private set; }
 
@@ -68,6 +69,7 @@ namespace BitShelter.Agent
       RunAtStartupMenuItem.Checked = InstallUtils.TaskExists(Const.AppName);
 
       backupNotifier = new BackupNotifier(trayIcon);
+      closeRequestWindow = new CloseRequestWindow(ExitThread);
 
       // 
       // CAC
@@ -83,6 +85,7 @@ namespace BitShelter.Agent
       if (disposing)
       {
         backupNotifier?.Dispose();
+        closeRequestWindow?.Dispose();
         components?.Dispose();
       }
 
