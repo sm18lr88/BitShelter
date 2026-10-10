@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Alexis;BitShelter contributors</Authors>
     <Company>BitShelter</Company>
     <Product>BitShelter</Product>
