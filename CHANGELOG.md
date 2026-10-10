@@ -6,18 +6,20 @@ All notable changes to BitShelter are in this file. The format follows [Keep a C
 
 #### Fixed
 
-- With **Ask applications to save their data first**, a VSS error after the snapshot was created made the service retry. The service then made a second snapshot and never deleted the first one. Now the error is a warning, and the snapshot is recorded and pruned as usual.
-- A rule with an end date before its start date, or with no run between the two dates, stopped all rules from running. It could also stop the service from starting. Now the service skips that rule and logs a warning, and the Agent marks such an end date as invalid.
+- With **Ask applications to save their data first**, a VSS error after a snapshot no longer causes a second snapshot that BitShelter never deletes.
+- A rule that cannot run, for example because its end date is before its start date, no longer stops the other rules or the service.
+- The Agent rejects an end date that is before the start date.
 - A rule change no longer cancels a pending snapshot retry.
-- Backups that wait for another backup no longer block snapshots and pruning, and their snapshots are no longer pruned while they wait. If a rule takes a new snapshot while its backup still waits, the waiting backup uses the new snapshot, so slow backups no longer pile up.
-- If the service cannot start the backups of a new snapshot, it logs an error. Before, it took the snapshot again.
-- Encrypted zip backups can be larger than 4 GB. An encrypted zip now uses Deflate or no compression: the Agent no longer offers BZip2 or PPMd for it, and an older rule with one of these methods is written with Deflate.
-- Backups no longer follow symbolic links to files. Links to folders were already skipped.
-- The Agent checks that the service owns the named pipe before it sends a request.
+- Slow backups no longer block snapshots and pruning, and each rule keeps at most one backup in the queue.
+- Pruning no longer deletes the snapshots of a backup that waits to start.
+- If the backups of a new snapshot cannot start, the service no longer takes the snapshot again.
+- Encrypted zip backups can be larger than 4 GB. They use Deflate or no compression, and older rules with BZip2 or PPMd use Deflate.
+- Backups no longer follow symbolic links to files.
+- The Agent sends requests only to a named pipe that the service owns.
 - The Agent shows an error when the service cannot save or delete a rule.
-- The tray Agent now exits when the installer asks it to close, so an upgrade or uninstall no longer leaves it running with its files removed.
-- Deleting a rule together with its snapshots stops the rule first. A snapshot that the rule creates during the deletion is deleted too, so no snapshot is left that is never pruned.
-- A `MaxShadowCopies` registry value of the wrong type no longer makes snapshots fail with the **Global** pruning strategy.
+- An upgrade or uninstall closes the tray Agent.
+- If you delete a rule and its snapshots, BitShelter also deletes a snapshot that the rule creates during the deletion.
+- A `MaxShadowCopies` registry value of the wrong type no longer stops snapshots with the **Global** pruning strategy.
 
 ### [0.2.0] - 2026-10-08
 
