@@ -2,7 +2,7 @@
 
 BitShelter keeps a version history of your files on Windows 11 and backs them up to another drive.
 
-- **Snapshots**: on a schedule, BitShelter takes snapshots of your drives with the Windows Volume Shadow Copy Service (VSS). To get back a deleted file or an earlier version, open **Previous Versions** in File Explorer. Snapshots are fast and use little disk space.
+- **Snapshots**: BitShelter uses the Windows Volume Shadow Copy Service (VSS) to take snapshots of your drives on a schedule. To get back a deleted file or an earlier version, open **Previous Versions** in File Explorer. Snapshots are fast and use little disk space.
 - **Backups**: after a snapshot, BitShelter can copy selected folders from the snapshot to another drive, a network share, or a cloud sync folder. Backups can be zip or tar archives, encrypted with OpenPGP.
 
 Earlier versions in File Explorer | Rules in BitShelter Agent
@@ -20,7 +20,7 @@ You need Windows 11 (x64) and the [.NET 10 Desktop Runtime (x64)](https://dotnet
 3. Click **Add Schedule**. In the **General** tab, click **Enable other Drive(s)** and turn on System Protection for your drives.
 4. Select the drives and click **Create**.
 
-A new rule takes a snapshot every 4 hours and keeps it for 1 week. The [user guide](docs/user-guide.md) explains the setup, the defaults, backups, and troubleshooting.
+A new rule takes a snapshot every 4 hours and keeps it for 1 week. For setup, defaults, backups, and troubleshooting, see the [user guide](docs/user-guide.md).
 
 ### Documentation
 
